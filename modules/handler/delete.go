@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	fiber "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 )
 
 func handleDelete() {
@@ -31,7 +31,7 @@ func handleDelete() {
 			return ctx.JSON([]interface{}{})
 		}
 
-		deleted := []interface{}{}
+		var deleted []interface{}
 		memcache.Cache.Lock()
 		if len(data.Filter) == 0 {
 			err := os.RemoveAll(fmt.Sprintf("./data/%s/%s", ctx.Params("database"), ctx.Params("collection")))

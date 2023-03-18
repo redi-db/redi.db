@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/goccy/go-json"
-	fiber "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 )
 
 func handleCreate() {
@@ -33,7 +33,7 @@ func handleCreate() {
 		}
 
 		path.Create()
-		created := []map[string]interface{}{}
+		var created []map[string]interface{}
 		for _, create := range data.Create {
 			if len(create) == 0 {
 				created = append(created, map[string]interface{}{
@@ -98,7 +98,7 @@ func handleCreate() {
 					continue
 				}
 
-				file.Close()
+				_ = file.Close()
 
 				memcache.Cache.Lock()
 				memcache.CacheSet(ctx.Params("database"), ctx.Params("collection"), id, create)

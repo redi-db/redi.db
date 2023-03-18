@@ -4,7 +4,7 @@ import (
 	"RediDB/modules/config"
 	"RediDB/modules/memcache"
 
-	fiber "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 )
 
 func HandleInfo() {
@@ -19,16 +19,16 @@ func HandleInfo() {
 			})
 		}
 
-		response := []struct {
+		var response []struct {
 			Name        string `json:"name"`
 			Collections []struct {
 				Name  string `json:"name"`
 				Count int    `json:"count"`
 			} `json:"collections"`
-		}{}
+		}
 
 		memcache.Cache.RLock()
-		cache := memcache.Cache.Data
+		cache := memcache.CacheGet()
 		for databaseName := range cache {
 			data := struct {
 				Name        string `json:"name"`

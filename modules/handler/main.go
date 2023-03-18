@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/goccy/go-json"
-	fiber "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 )
 
 var LengthOfID = 30

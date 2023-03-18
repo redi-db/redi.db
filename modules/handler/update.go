@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/goccy/go-json"
-	fiber "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 )
 
 func handleUpdate() {
@@ -47,7 +47,7 @@ func handleUpdate() {
 			})
 		}
 
-		updated := []map[string]interface{}{}
+		var updated []map[string]interface{}
 
 		memcache.Cache.Lock()
 		for _, document := range found {

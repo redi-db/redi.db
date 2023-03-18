@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/goccy/go-json"
-	fiber "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 )
 
 func handleSearchOrCreate() {
@@ -74,7 +74,7 @@ func handleSearchOrCreate() {
 				})
 			}
 
-			file.Close()
+			_ = file.Close()
 
 			memcache.Cache.Lock()
 			memcache.CacheSet(ctx.Params("database"), ctx.Params("collection"), id, document)

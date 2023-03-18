@@ -11,14 +11,18 @@ func create() {
 		log.Fatalln("Failed to create config file: ", err)
 	}
 
-	defer file.Close()
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
 
 	file, err = os.OpenFile(configName, os.O_RDWR, 0644)
 	if err != nil {
 		log.Fatalln("Failed to opening config file: ", err)
 	}
 
-	defer file.Close()
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
 
 	_, err = file.WriteString(defaultConfig)
 	if err != nil {

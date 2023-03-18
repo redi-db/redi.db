@@ -2,9 +2,8 @@ package handler
 
 import (
 	"RediDB/modules/memcache"
-	"reflect"
-
 	"github.com/gofiber/fiber/v2"
+	"reflect"
 )
 
 func handleSearch() {
@@ -50,6 +49,10 @@ func handleSearch() {
 
 		if int(max) == 0 {
 			return ctx.JSON(found)
+		}
+
+		if int(max) > len(found) {
+			max = float64(len(found))
 		}
 
 		return ctx.JSON(found[:(int(max))])
