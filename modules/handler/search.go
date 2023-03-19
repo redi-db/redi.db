@@ -2,13 +2,17 @@ package handler
 
 import (
 	"RediDB/modules/memcache"
-	"github.com/gofiber/fiber/v2"
 	"reflect"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func handleSearch() {
-	App.Post("/:database/:collection/search", func(ctx *fiber.Ctx) error {
+	App.Post("/search", func(ctx *fiber.Ctx) error {
 		var data struct {
+			Database string `json:"database"`
+			Collection string `json:"collection"`
+			
 			Filter map[string]interface{} `json:"filter"`
 		}
 
@@ -42,7 +46,7 @@ func handleSearch() {
 			})
 		}
 
-		found := memcache.Get(ctx.Params("database"), ctx.Params("collection"), data.Filter)
+		found := memcache.Get(data.Database, data.Collection, data.Filter)
 		if found == nil {
 			return ctx.JSON([]interface{}{})
 		}

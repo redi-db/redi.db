@@ -10,8 +10,11 @@ import (
 )
 
 func handleSearchOrCreate() {
-	App.Post("/:database/:collection/searchOrCreate", func(ctx *fiber.Ctx) error {
+	App.Post("/searchOrCreate", func(ctx *fiber.Ctx) error {
 		var data struct {
+			Database string `json:"database"`
+			Collection string `json:"collection"`
+			
 			Filter     map[string]interface{} `json:"filter"`
 			CreateData map[string]interface{} `json:"data"`
 		}
@@ -30,7 +33,7 @@ func handleSearchOrCreate() {
 			})
 		}
 
-		found := memcache.Get(ctx.Params("database"), ctx.Params("collection"), data.Filter)
+		found := memcache.Get(data.Database, data.Collection, data.Filter)
 		result := map[string]interface{}{
 			"created": false,
 		}
@@ -41,8 +44,8 @@ func handleSearchOrCreate() {
 			document := data.CreateData
 			document["_id"] = id
 
-			if _, err := os.Stat(fmt.Sprintf("./data/%s/%s", ctx.Params("database"), ctx.Params("collection"))); os.IsNotExist(err) {
-				err := os.MkdirAll(fmt.Sprintf("./data/%s/%s", ctx.Params("database"), ctx.Params("collection")), os.ModePerm)
+			if _, err := os.Stat(fmt.Sprintf("./data/%s/%s", data.Database, data.Collection)); os.IsNotExist(err) {
+				err := os.MkdirAll(fmt.Sprintf("./data/%s/%s", data.Database, data.Collection), os.ModePerm)
 				if err != nil {
 					return ctx.JSON(fiber.Map{
 						"success": false,
@@ -51,7 +54,7 @@ func handleSearchOrCreate() {
 				}
 			}
 
-			file, err := os.Create(fmt.Sprintf("./data/%s/%s/%s.db", ctx.Params("database"), ctx.Params("collection"), id))
+			file, err := os.Create(fmt.Sprintf("./data/%s/%s/%s.db", data.Database, data.Collection, id))
 			if err != nil {
 				return ctx.JSON(fiber.Map{
 					"success": false,
@@ -77,7 +80,7 @@ func handleSearchOrCreate() {
 			_ = file.Close()
 
 			memcache.Cache.Lock()
-			memcache.CacheSet(ctx.Params("database"), ctx.Params("collection"), id, document)
+			memcache.CacheSet(data.Database, data.Collection, id, document)
 			memcache.Cache.Unlock()
 			result["data"] = document
 

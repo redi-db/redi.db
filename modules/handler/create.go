@@ -13,8 +13,11 @@ import (
 )
 
 func handleCreate() {
-	App.Post("/:database/:collection/create", func(ctx *fiber.Ctx) error {
+	App.Post("/create", func(ctx *fiber.Ctx) error {
 		var data struct {
+			Database string `json:"database"`
+			Collection string `json:"collection"`
+
 			Create []map[string]interface{} `json:"data"`
 		}
 
@@ -56,8 +59,8 @@ func handleCreate() {
 			id := generateID(LengthOfID)
 			create["_id"] = id
 
-			if _, err := os.Stat(fmt.Sprintf("./data/%s/%s", ctx.Params("database"), ctx.Params("collection"))); os.IsNotExist(err) {
-				err := os.MkdirAll(fmt.Sprintf("./data/%s/%s", ctx.Params("database"), ctx.Params("collection")), os.ModePerm)
+			if _, err := os.Stat(fmt.Sprintf("./data/%s/%s", data.Database, data.Collection)); os.IsNotExist(err) {
+				err := os.MkdirAll(fmt.Sprintf("./data/%s/%s", data.Database, data.Collection), os.ModePerm)
 				if err != nil {
 					created = append(created, map[string]interface{}{
 						"_id":     id,
@@ -68,8 +71,8 @@ func handleCreate() {
 				}
 			}
 
-			if _, err := os.Stat(fmt.Sprintf("./data/%s/%s/%s.db", ctx.Params("database"), ctx.Params("collection"), id)); os.IsNotExist(err) {
-				file, err := os.Create(fmt.Sprintf("./data/%s/%s/%s.db", ctx.Params("database"), ctx.Params("collection"), id))
+			if _, err := os.Stat(fmt.Sprintf("./data/%s/%s/%s.db", data.Database, data.Collection, id)); os.IsNotExist(err) {
+				file, err := os.Create(fmt.Sprintf("./data/%s/%s/%s.db", data.Database, data.Collection, id))
 				if err != nil {
 					created = append(created, map[string]interface{}{
 						"_id":     id,
@@ -101,7 +104,7 @@ func handleCreate() {
 				_ = file.Close()
 
 				memcache.Cache.Lock()
-				memcache.CacheSet(ctx.Params("database"), ctx.Params("collection"), id, create)
+				memcache.CacheSet(data.Database, data.Collection, id, create)
 				created = append(created, map[string]interface{}{
 					"_id":     id,
 					"created": true,

@@ -10,8 +10,11 @@ import (
 )
 
 func handleUpdate() {
-	App.Put("/:database/:collection", func(ctx *fiber.Ctx) error {
+	App.Put("/", func(ctx *fiber.Ctx) error {
 		var data struct {
+			Database string `json:"database"`
+			Collection string `json:"collection"`
+
 			Data struct {
 				Filter map[string]interface{} `json:"filter"`
 				Update map[string]interface{} `json:"update"`
@@ -39,7 +42,7 @@ func handleUpdate() {
 			})
 		}
 
-		found := memcache.Get(ctx.Params("database"), ctx.Params("collection"), data.Data.Filter)
+		found := memcache.Get(data.Database, data.Collection, data.Data.Filter)
 		if found == nil {
 			return ctx.JSON(fiber.Map{
 				"success": false,
@@ -62,7 +65,7 @@ func handleUpdate() {
 				continue
 			}
 
-			err = os.WriteFile(fmt.Sprintf("./data/%s/%s/%s.db", ctx.Params("database"), ctx.Params("collection"), document["_id"]), encoded, os.ModePerm)
+			err = os.WriteFile(fmt.Sprintf("./data/%s/%s/%s.db", data.Database, data.Collection, document["_id"]), encoded, os.ModePerm)
 			if err != nil {
 				updated = append(updated, map[string]interface{}{
 					"_id":     document["_id"],
@@ -72,7 +75,7 @@ func handleUpdate() {
 				continue
 			}
 
-			memcache.CacheSet(ctx.Params("database"), ctx.Params("collection"), document["_id"].(string), memcache.UpdateDocument(document, data.Data.Update))
+			memcache.CacheSet(data.Database, data.Collection, document["_id"].(string), memcache.UpdateDocument(document, data.Data.Update))
 			updated = append(updated, map[string]interface{}{
 				"_id":     document["_id"],
 				"updated": true,

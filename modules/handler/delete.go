@@ -10,8 +10,11 @@ import (
 )
 
 func handleDelete() {
-	App.Delete("/:database/:collection", func(ctx *fiber.Ctx) error {
+	App.Delete("/", func(ctx *fiber.Ctx) error {
 		var data struct {
+			Database string `json:"database"`
+			Collection string `json:"collection"`
+
 			Filter map[string]interface{} `json:"filter"`
 		}
 
@@ -26,7 +29,7 @@ func handleDelete() {
 			data.Filter = make(map[string]interface{})
 		}
 
-		found := memcache.Get(ctx.Params("database"), ctx.Params("collection"), data.Filter)
+		found := memcache.Get(data.Database, data.Collection, data.Filter)
 		if found == nil {
 			return ctx.JSON([]interface{}{})
 		}
@@ -34,8 +37,8 @@ func handleDelete() {
 		var deleted []interface{}
 		memcache.Cache.Lock()
 		if len(data.Filter) == 0 {
-			err := os.RemoveAll(fmt.Sprintf("./data/%s/%s", ctx.Params("database"), ctx.Params("collection")))
-			memcache.CacheDelete(ctx.Params("database"), ctx.Params("collection"), "")
+			err := os.RemoveAll(fmt.Sprintf("./data/%s/%s", data.Database, data.Collection))
+			memcache.CacheDelete(data.Database, data.Collection, "")
 
 			if err != nil {
 				for _, document := range found {
@@ -56,8 +59,8 @@ func handleDelete() {
 
 		} else {
 			for _, document := range found {
-				err := os.Remove(fmt.Sprintf("./data/%s/%s/%s.db", ctx.Params("database"), ctx.Params("collection"), document["_id"]))
-				memcache.CacheDelete(ctx.Params("database"), ctx.Params("collection"), document["_id"].(string))
+				err := os.Remove(fmt.Sprintf("./data/%s/%s/%s.db", data.Database, data.Collection, document["_id"]))
+				memcache.CacheDelete(data.Database, data.Collection, document["_id"].(string))
 
 				if err != nil {
 					deleted = append(deleted, map[string]interface{}{
@@ -73,18 +76,18 @@ func handleDelete() {
 				}
 			}
 
-			if len(memcache.CacheGet()[ctx.Params("database")][ctx.Params("collection")]) == 0 {
-				delete(memcache.CacheGet()[ctx.Params("database")], ctx.Params("collection"))
-				if err := os.Remove(fmt.Sprintf("./data/%s/%s", ctx.Params("database"), ctx.Params("collection"))); err != nil {
-					log.Printf("Failed to delete %s/%s collection: %s", ctx.Params("database"), ctx.Params("collection"), err.Error())
+			if len(memcache.CacheGet()[data.Database][data.Collection]) == 0 {
+				delete(memcache.CacheGet()[data.Database], data.Collection)
+				if err := os.Remove(fmt.Sprintf("./data/%s/%s", data.Database, data.Collection)); err != nil {
+					log.Printf("Failed to delete %s/%s collection: %s", data.Database, data.Collection, err.Error())
 				}
 			}
 		}
 
-		if len(memcache.CacheGet()[ctx.Params("database")]) == 0 {
-			delete(memcache.CacheGet(), ctx.Params("database"))
-			if err := os.Remove(fmt.Sprintf("./data/%s/", ctx.Params("database"))); err != nil {
-				log.Printf("Failed to delete %s database: %s", ctx.Params("database"), err.Error())
+		if len(memcache.CacheGet()[data.Database]) == 0 {
+			delete(memcache.CacheGet(), data.Database)
+			if err := os.Remove(fmt.Sprintf("./data/%s/", data.Database)); err != nil {
+				log.Printf("Failed to delete %s database: %s", data.Database, err.Error())
 			}
 		}
 

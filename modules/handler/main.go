@@ -38,6 +38,18 @@ func init() {
 					"message": "Authorization failed",
 				})
 			}
+
+			if len(auth.Database) == 0 {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "Database required field",
+				})
+			} else if len(auth.Collection) == 0 {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "Collection required field",
+				})
+			}
 		}
 
 		return ctx.Next()
