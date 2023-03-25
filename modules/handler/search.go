@@ -2,6 +2,7 @@ package handler
 
 import (
 	"RediDB/modules/memcache"
+	"fmt"
 	"reflect"
 
 	"github.com/gofiber/fiber/v2"
@@ -36,6 +37,24 @@ func handleSearch() {
 				"success": false,
 				"message": "$max option must be integer",
 			})
+		}
+
+		if data.Filter["$or"] != nil {
+			if reflect.TypeOf(data.Filter["$or"]).String() != "[]interface {}" {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$or option must be array",
+				})
+			}
+
+			for i, or := range data.Filter["$or"].([]interface{}) {
+				if reflect.TypeOf(or).String() != "map[string]interface {}" {
+					return ctx.JSON(fiber.Map{
+						"success": false,
+						"message": fmt.Sprintf("$or option with index %d is not object", i),
+					})
+				}
+			}
 		}
 
 		max := data.Filter["$max"].(float64)

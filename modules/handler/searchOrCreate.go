@@ -12,9 +12,9 @@ import (
 func handleSearchOrCreate() {
 	App.Post("/searchOrCreate", func(ctx *fiber.Ctx) error {
 		var data struct {
-			Database string `json:"database"`
+			Database   string `json:"database"`
 			Collection string `json:"collection"`
-			
+
 			Filter     map[string]interface{} `json:"filter"`
 			CreateData map[string]interface{} `json:"data"`
 		}
@@ -24,6 +24,10 @@ func handleSearchOrCreate() {
 				"success": false,
 				"message": err.Error(),
 			})
+		}
+
+		if data.CreateData != nil {
+			delete(data.CreateData, "$or")
 		}
 
 		if data.Filter == nil || len(data.Filter) == 0 || data.CreateData == nil || len(data.CreateData) == 0 {

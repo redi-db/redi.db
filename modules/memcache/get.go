@@ -1,13 +1,22 @@
 package memcache
 
-import "RediDB/modules/path"
+import (
+	"RediDB/modules/path"
+)
 
 func Get(database string, collection string, filter map[string]interface{}) []map[string]interface{} {
 	path.Create()
 
 	var result []map[string]interface{}
+	var or []interface{}
+
 	if filter != nil && filter["$max"] != nil {
 		delete(filter, "$max")
+	}
+
+	if filter != nil && filter["$or"] != nil {
+		or = filter["$or"].([]interface{})
+		delete(filter, "$or")
 	}
 
 	Cache.Lock()
@@ -25,6 +34,22 @@ func Get(database string, collection string, filter map[string]interface{}) []ma
 	for _, item := range cache[database][collection] {
 		if matchesFilter(item, filter) {
 			result = append(result, item)
+		}
+	}
+
+	if len(or) > 0 && len(result) == 0 {
+		for _, orFilter := range or {
+			found := false
+			for _, item := range cache[database][collection] {
+				if matchesFilter(item, orFilter.(map[string]interface{})) {
+					found = true
+					result = append(result, item)
+				}
+			}
+
+			if found {
+				break
+			}
 		}
 	}
 
