@@ -1,6 +1,8 @@
 package memcache
 
-import "reflect"
+import (
+	"reflect"
+)
 
 func UpdateDocument(document map[string]interface{}, updateData map[string]interface{}) map[string]interface{} {
 	for key, val := range updateData {
@@ -22,4 +24,9 @@ func UpdateDocument(document map[string]interface{}, updateData map[string]inter
 	}
 
 	return document
+}
+
+func InstantUpdateDocument(document map[string]interface{}, updateData map[string]interface{}) map[string]interface{} {
+	updateData["_id"] = document["_id"]
+	return updateData
 }

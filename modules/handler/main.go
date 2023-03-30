@@ -64,6 +64,7 @@ func init() {
 	handleSearch()
 	handleCreate()
 	handleSearchOrCreate()
+	handleInstantUpdate()
 	handleUpdate()
 	handleDelete()
 	HandleInfo()

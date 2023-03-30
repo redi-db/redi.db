@@ -10,9 +10,9 @@ import (
 )
 
 func handleUpdate() {
-	App.Put("/", func(ctx *fiber.Ctx) error {
+	App.Patch("/", func(ctx *fiber.Ctx) error {
 		var data struct {
-			Database string `json:"database"`
+			Database   string `json:"database"`
 			Collection string `json:"collection"`
 
 			Data struct {
@@ -75,7 +75,7 @@ func handleUpdate() {
 				continue
 			}
 
-			memcache.CacheSet(data.Database, data.Collection, document["_id"].(string), memcache.UpdateDocument(document, data.Data.Update))
+			memcache.CacheSet(data.Database, data.Collection, document["_id"].(string), updatedDocument)
 			updated = append(updated, map[string]interface{}{
 				"_id":     document["_id"],
 				"updated": true,
