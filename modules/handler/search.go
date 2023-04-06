@@ -11,9 +11,9 @@ import (
 func handleSearch() {
 	App.Post("/search", func(ctx *fiber.Ctx) error {
 		var data struct {
-			Database string `json:"database"`
+			Database   string `json:"database"`
 			Collection string `json:"collection"`
-			
+
 			Filter map[string]interface{} `json:"filter"`
 		}
 
@@ -37,6 +37,64 @@ func handleSearch() {
 				"success": false,
 				"message": "$max option must be integer",
 			})
+		}
+
+		if data.Filter["$order"] != nil {
+			if reflect.TypeOf(data.Filter["$order"]).String() != "map[string]interface {}" {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$order option must be object with \"type\" and \"by\"",
+				})
+			}
+
+			orderType, orderTypeOk := data.Filter["$order"].(map[string]interface{})["type"]
+			orderBy, orderByOk := data.Filter["$order"].(map[string]interface{})["by"]
+
+			if !orderTypeOk {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$order parameter \"type\" is required",
+				})
+			}
+
+			if orderType != "desc" && orderType != "asc" {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$order parameter \"type\" must be \"desc\" and \"asc\" only",
+				})
+			}
+
+			if !orderByOk {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$order parameter \"by\" is required",
+				})
+			}
+
+			if reflect.TypeOf(orderBy).String() != "string" {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$order parameter \"by\" must be string",
+				})
+			}
+		}
+
+		if data.Filter["$ew"] != nil {
+			if reflect.TypeOf(data.Filter["$ew"]).String() != "map[string]interface {}" {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$ew option must be object",
+				})
+			}
+
+			for i, or := range data.Filter["$ew"].(map[string]any) {
+				if reflect.TypeOf(or).String() != "string" {
+					return ctx.JSON(fiber.Map{
+						"success": false,
+						"message": fmt.Sprintf("$ew parametr with index \"%s\" is not string", i),
+					})
+				}
+			}
 		}
 
 		if data.Filter["$or"] != nil {
