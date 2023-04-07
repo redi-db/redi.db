@@ -3,6 +3,7 @@ package handler
 import (
 	"RediDB/modules/config"
 	"RediDB/modules/structure"
+	"RediDB/modules/updates"
 	"log"
 	"strconv"
 
@@ -58,6 +59,18 @@ func init() {
 	App.Hooks().OnListen(func() error {
 		println()
 		log.Println("Served server on port " + strconv.Itoa(config.Get().Web.Port))
+
+		if config.Get().Settings.CheckUpdates {
+			version, updateRequired, err := updates.Check()
+			if err != nil {
+				log.Printf("Failed to check updates: %s", err.Error())
+				return nil
+			}
+
+			if updateRequired {
+				log.Printf("New version is available: v%s (Current v%s)", version, updates.VERSION)
+			}
+		}
 		return nil
 	})
 

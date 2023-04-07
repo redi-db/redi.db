@@ -15,7 +15,7 @@ import (
 func handleCreate() {
 	App.Post("/create", func(ctx *fiber.Ctx) error {
 		var data struct {
-			Database string `json:"database"`
+			Database   string `json:"database"`
 			Collection string `json:"collection"`
 
 			Create []map[string]interface{} `json:"data"`
@@ -52,6 +52,33 @@ func handleCreate() {
 					"created": false,
 					"skipped": true,
 					"reason":  "ID is locked property",
+				})
+				continue
+			}
+
+			if create["$order"] != nil {
+				created = append(created, map[string]interface{}{
+					"created": false,
+					"skipped": true,
+					"reason":  "$order is locked property",
+				})
+				continue
+			}
+
+			if create["$max"] != nil {
+				created = append(created, map[string]interface{}{
+					"created": false,
+					"skipped": true,
+					"reason":  "$max is locked property",
+				})
+				continue
+			}
+
+			if create["$or"] != nil {
+				created = append(created, map[string]interface{}{
+					"created": false,
+					"skipped": true,
+					"reason":  "$or is locked property",
 				})
 				continue
 			}

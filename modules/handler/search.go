@@ -105,6 +105,13 @@ func handleSearch() {
 				})
 			}
 
+			if len(data.Filter["$or"].([]interface{})) == 0 {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$or option is empty",
+				})
+			}
+
 			for i, or := range data.Filter["$or"].([]interface{}) {
 				if reflect.TypeOf(or).String() != "map[string]interface {}" {
 					return ctx.JSON(fiber.Map{
@@ -123,19 +130,11 @@ func handleSearch() {
 			})
 		}
 
-		found := memcache.Get(data.Database, data.Collection, data.Filter)
+		found := memcache.Get(data.Database, data.Collection, data.Filter, int(max))
 		if found == nil {
 			return ctx.JSON([]interface{}{})
 		}
 
-		if int(max) == 0 {
-			return ctx.JSON(found)
-		}
-
-		if int(max) > len(found) {
-			max = float64(len(found))
-		}
-
-		return ctx.JSON(found[:(int(max))])
+		return ctx.JSON(found)
 	})
 }

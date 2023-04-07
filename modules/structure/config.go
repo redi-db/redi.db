@@ -8,7 +8,8 @@ type Config struct {
 	} `yaml:"server"`
 
 	Settings struct {
-		MaxThreads int `yaml:"max_threads"`
+		MaxThreads   int  `yaml:"max_threads"`
+		CheckUpdates bool `yaml:"check_updates"`
 	} `json:"settings"`
 
 	Database struct {

@@ -6,7 +6,7 @@ import (
 	"sort"
 )
 
-func Get(database string, collection string, filter map[string]interface{}) []map[string]interface{} {
+func Get(database string, collection string, filter map[string]interface{}, max int) []map[string]interface{} {
 	path.Create()
 
 	var result []map[string]interface{}
@@ -15,6 +15,12 @@ func Get(database string, collection string, filter map[string]interface{}) []ma
 
 	if filter != nil && filter["$max"] != nil {
 		delete(filter, "$max")
+
+		if max == 0 {
+			max = -1
+		} else {
+			max--
+		}
 	}
 
 	if filter != nil && filter["$or"] != nil {
@@ -40,6 +46,10 @@ func Get(database string, collection string, filter map[string]interface{}) []ma
 	}
 
 	for _, document := range cache[database][collection] {
+		if max != -1 && len(result) > max {
+			break
+		}
+
 		if matchesFilter(document, filter) {
 			result = append(result, document)
 		}
@@ -49,6 +59,11 @@ func Get(database string, collection string, filter map[string]interface{}) []ma
 		for _, orFilter := range or {
 			found := false
 			for _, document := range cache[database][collection] {
+				if max != -1 && len(result) > max {
+					found = true
+					break
+				}
+
 				if matchesFilter(document, orFilter.(map[string]interface{})) {
 					found = true
 					result = append(result, document)
@@ -62,7 +77,7 @@ func Get(database string, collection string, filter map[string]interface{}) []ma
 	}
 
 	if len(sort) > 0 {
-		return sortData(result, sort["type"].(string), sort["by"])
+		result = sortData(result, sort["type"].(string), sort["by"])
 	}
 
 	return result

@@ -13,6 +13,7 @@ const defaultConfig = `server:
 
 settings:
     max_threads: 30000
+    check_updates: true
 
 auth:
     login: root

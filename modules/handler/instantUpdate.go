@@ -4,6 +4,7 @@ import (
 	"RediDB/modules/memcache"
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -42,12 +43,48 @@ func handleInstantUpdate() {
 			})
 		}
 
-		found := memcache.Get(data.Database, data.Collection, data.Data.Filter)
-		if found == nil {
+		if data.Data.Update["$max"] != nil {
 			return ctx.JSON(fiber.Map{
 				"success": false,
-				"message": "Nothing to update",
+				"message": "$max property cannot be changed",
 			})
+		}
+
+		if data.Data.Update["$order"] != nil {
+			return ctx.JSON(fiber.Map{
+				"success": false,
+				"message": "$order property cannot be changed",
+			})
+		}
+
+		if data.Data.Filter["$or"] != nil {
+			if reflect.TypeOf(data.Data.Filter["$or"]).String() != "[]interface {}" {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$or option must be array",
+				})
+			}
+
+			if len(data.Data.Filter["$or"].([]interface{})) == 0 {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$or option is empty",
+				})
+			}
+
+			for i, or := range data.Data.Filter["$or"].([]interface{}) {
+				if reflect.TypeOf(or).String() != "map[string]interface {}" {
+					return ctx.JSON(fiber.Map{
+						"success": false,
+						"message": fmt.Sprintf("$or option with index %d is not object", i),
+					})
+				}
+			}
+		}
+
+		found := memcache.Get(data.Database, data.Collection, data.Data.Filter, 0)
+		if found == nil {
+			return ctx.JSON([]map[string]interface{}{})
 		}
 
 		var updated []map[string]interface{}

@@ -4,6 +4,7 @@ import (
 	"RediDB/modules/memcache"
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -26,10 +27,6 @@ func handleSearchOrCreate() {
 			})
 		}
 
-		if data.CreateData != nil {
-			delete(data.CreateData, "$or")
-		}
-
 		if data.Filter == nil || len(data.Filter) == 0 || data.CreateData == nil || len(data.CreateData) == 0 {
 			return ctx.JSON(fiber.Map{
 				"success": false,
@@ -37,7 +34,43 @@ func handleSearchOrCreate() {
 			})
 		}
 
-		found := memcache.Get(data.Database, data.Collection, data.Filter)
+		if data.CreateData != nil {
+			delete(data.CreateData, "$or")
+			delete(data.CreateData, "$order")
+			delete(data.CreateData, "$max")
+		}
+
+		if data.Filter["$or"] != nil {
+			if reflect.TypeOf(data.Filter["$or"]).String() != "[]interface {}" {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$or option must be array",
+				})
+			}
+
+			if len(data.Filter["$or"].([]interface{})) == 0 {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$or option is empty",
+				})
+			}
+
+			for i, or := range data.Filter["$or"].([]interface{}) {
+				if reflect.TypeOf(or).String() != "map[string]interface {}" {
+					return ctx.JSON(fiber.Map{
+						"success": false,
+						"message": fmt.Sprintf("$or option with index %d is not object", i),
+					})
+				}
+			}
+		}
+
+		if data.Filter != nil {
+			delete(data.Filter, "$order")
+			delete(data.Filter, "$max")
+		}
+
+		found := memcache.Get(data.Database, data.Collection, data.Filter, 0)
 		result := map[string]interface{}{
 			"created": false,
 		}

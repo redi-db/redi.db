@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -12,7 +13,7 @@ import (
 func handleDelete() {
 	App.Delete("/", func(ctx *fiber.Ctx) error {
 		var data struct {
-			Database string `json:"database"`
+			Database   string `json:"database"`
 			Collection string `json:"collection"`
 
 			Filter map[string]interface{} `json:"filter"`
@@ -29,7 +30,32 @@ func handleDelete() {
 			data.Filter = make(map[string]interface{})
 		}
 
-		found := memcache.Get(data.Database, data.Collection, data.Filter)
+		if data.Filter["$or"] != nil {
+			if reflect.TypeOf(data.Filter["$or"]).String() != "[]interface {}" {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$or option must be array",
+				})
+			}
+
+			if len(data.Filter["$or"].([]interface{})) == 0 {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": "$or option is empty",
+				})
+			}
+
+			for i, or := range data.Filter["$or"].([]interface{}) {
+				if reflect.TypeOf(or).String() != "map[string]interface {}" {
+					return ctx.JSON(fiber.Map{
+						"success": false,
+						"message": fmt.Sprintf("$or option with index %d is not object", i),
+					})
+				}
+			}
+		}
+
+		found := memcache.Get(data.Database, data.Collection, data.Filter, 0)
 		if found == nil {
 			return ctx.JSON([]interface{}{})
 		}
@@ -92,6 +118,10 @@ func handleDelete() {
 		}
 
 		memcache.Cache.Unlock()
+
+		if deleted == nil {
+			deleted = make([]interface{}, 0)
+		}
 		return ctx.JSON(deleted)
 	})
 }
