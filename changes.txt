@@ -1,0 +1,2 @@
+Additions:
+    + You can specify the maximum amount of data to query

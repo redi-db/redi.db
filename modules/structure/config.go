@@ -9,6 +9,7 @@ type Config struct {
 
 	Settings struct {
 		MaxThreads   int  `yaml:"max_threads"`
+		MaxData      int  `yaml:"max_data"`
 		CheckUpdates bool `yaml:"check_updates"`
 	} `json:"settings"`
 

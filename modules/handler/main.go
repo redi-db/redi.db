@@ -14,6 +14,7 @@ import (
 var LengthOfID = 30
 var App = fiber.New(fiber.Config{
 	DisableStartupMessage: true,
+	BodyLimit:             config.Get().Settings.MaxData * 1024 * 1024,
 	ReduceMemoryUsage:     false,
 	UnescapePath:          true,
 	JSONEncoder:           json.Marshal,

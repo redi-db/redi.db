@@ -13,12 +13,17 @@ import (
 func init() {
 	log.Println("Preparing to start...")
 
-	max := config.Get().Settings.MaxThreads
-	if max < 10000 {
+	threads := config.Get().Settings.MaxThreads
+	if threads < 10000 {
 		log.Panicln("Minimum count of settings.max_threads is 10000")
 	}
 
-	debug.SetMaxThreads(max)
+	data := config.Get().Settings.MaxData
+	if data < 1 {
+		log.Panicln("Minimum count of settings.max_data is 1")
+	}
+
+	debug.SetMaxThreads(threads)
 	path.Create()
 	memcache.Load()
 }
