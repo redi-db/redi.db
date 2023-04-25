@@ -1,2 +1,6 @@
-Additions:
-    + You can specify the maximum amount of data to query
+Addenda:
+    + WebSocket support, which speeds up server response time
+
+Fixes:
+    + Filter "$or" could put server if value was nullable
+    + The "$max" filter worked strangely

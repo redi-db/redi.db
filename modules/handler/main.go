@@ -22,6 +22,10 @@ var App = fiber.New(fiber.Config{
 })
 
 func init() {
+	if config.Get().Settings.WebSocketAllowed {
+		HandleWS()
+	}
+
 	App.Use(func(ctx *fiber.Ctx) error {
 		if ctx.Method() != "GET" {
 			ctx.Request().Header.Set("Content-Type", "application/json")

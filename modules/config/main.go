@@ -15,6 +15,7 @@ settings:
     max_threads: 30000 # Maximum number of branches that will be received from the processor (The higher - the more load will be sustained)
     max_data: 4 # Maximum amount of data in the query in mb
     check_updates: true
+    websocket_support: true # It is desirable to use the ws protocol
 
 auth:
     login: root

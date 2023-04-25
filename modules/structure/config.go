@@ -11,6 +11,8 @@ type Config struct {
 		MaxThreads   int  `yaml:"max_threads"`
 		MaxData      int  `yaml:"max_data"`
 		CheckUpdates bool `yaml:"check_updates"`
+
+		WebSocketAllowed bool `yaml:"websocket_support"`
 	} `json:"settings"`
 
 	Database struct {

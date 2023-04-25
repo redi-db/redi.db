@@ -15,12 +15,12 @@ func Get(database string, collection string, filter map[string]interface{}, max 
 
 	if filter != nil && filter["$max"] != nil {
 		delete(filter, "$max")
+	}
 
-		if max == 0 {
-			max = -1
-		} else {
-			max--
-		}
+	if max == 0 {
+		max = -1
+	} else {
+		max--
 	}
 
 	if filter != nil && filter["$or"] != nil {

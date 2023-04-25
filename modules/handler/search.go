@@ -2,10 +2,12 @@ package handler
 
 import (
 	"RediDB/modules/memcache"
+	"RediDB/modules/structure"
 	"fmt"
 	"reflect"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 )
 
 func handleSearch() {
@@ -113,7 +115,7 @@ func handleSearch() {
 			}
 
 			for i, or := range data.Filter["$or"].([]interface{}) {
-				if reflect.TypeOf(or).String() != "map[string]interface {}" {
+				if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
 					return ctx.JSON(fiber.Map{
 						"success": false,
 						"message": fmt.Sprintf("$or option with index %d is not object", i),
@@ -136,5 +138,150 @@ func handleSearch() {
 		}
 
 		return ctx.JSON(found)
+	})
+}
+
+func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
+	if request.Filter == nil {
+		request.Filter = make(map[string]interface{})
+	}
+
+	if request.Filter["$max"] == nil {
+		request.Filter["$max"] = 0.0
+	}
+
+	if reflect.TypeOf(request.Filter["$max"]).String() != "float64" && reflect.TypeOf(request.Filter["$max"]).String() != "int" {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: "$max option must be integer",
+		})
+
+		return
+	}
+
+	if request.Filter["$order"] != nil {
+		if reflect.TypeOf(request.Filter["$order"]).String() != "map[string]interface {}" {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: "$order option must be object with \"type\" and \"by\"",
+			})
+
+			return
+		}
+
+		orderType, orderTypeOk := request.Filter["$order"].(map[string]interface{})["type"]
+		orderBy, orderByOk := request.Filter["$order"].(map[string]interface{})["by"]
+
+		if !orderTypeOk {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: "$order parameter \"type\" is required",
+			})
+
+			return
+		}
+
+		if orderType != "desc" && orderType != "asc" {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: "$order parameter \"type\" must be \"desc\" and \"asc\" only",
+			})
+
+			return
+		}
+
+		if !orderByOk {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: "$order parameter \"by\" is required",
+			})
+
+			return
+		}
+
+		if reflect.TypeOf(orderBy).String() != "string" {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: "$order parameter \"by\" must be string",
+			})
+
+			return
+		}
+	}
+
+	if request.Filter["$ew"] != nil {
+		if reflect.TypeOf(request.Filter["$ew"]).String() != "map[string]interface {}" {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: "$ew option must be object",
+			})
+
+			return
+		}
+
+		for i, or := range request.Filter["$ew"].(map[string]any) {
+			if reflect.TypeOf(or).String() != "string" {
+				ws.WriteJSON(structure.WebsocketAnswer{
+					Error:   true,
+					Message: fmt.Sprintf("$ew parametr with index \"%s\" is not string", i),
+				})
+
+				return
+			}
+		}
+	}
+
+	if request.Filter["$or"] != nil {
+		if reflect.TypeOf(request.Filter["$or"]).String() != "[]interface {}" {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: "$or option must be array",
+			})
+
+			return
+		}
+
+		if len(request.Filter["$or"].([]interface{})) == 0 {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: "$or option is empty",
+			})
+
+			return
+		}
+
+		for i, or := range request.Filter["$or"].([]interface{}) {
+			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
+				ws.WriteJSON(structure.WebsocketAnswer{
+					Error:   true,
+					Message: fmt.Sprintf("$or option with index %d is not object", i),
+				})
+
+				return
+			}
+		}
+	}
+
+	max := request.Filter["$max"].(float64)
+	if int(max) < 0 {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: "$max option must be >= 0",
+		})
+
+		return
+	}
+
+	found := memcache.Get(request.Database, request.Collection, request.Filter, int(max))
+	if found == nil {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Data: []interface{}{},
+		})
+
+		return
+	}
+
+	ws.WriteJSON(structure.WebsocketAnswer{
+		Data: found,
 	})
 }

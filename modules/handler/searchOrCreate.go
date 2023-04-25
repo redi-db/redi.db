@@ -2,12 +2,14 @@ package handler
 
 import (
 	"RediDB/modules/memcache"
+	"RediDB/modules/structure"
 	"fmt"
 	"os"
 	"reflect"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 )
 
 func handleSearchOrCreate() {
@@ -56,7 +58,7 @@ func handleSearchOrCreate() {
 			}
 
 			for i, or := range data.Filter["$or"].([]interface{}) {
-				if reflect.TypeOf(or).String() != "map[string]interface {}" {
+				if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
 					return ctx.JSON(fiber.Map{
 						"success": false,
 						"message": fmt.Sprintf("$or option with index %d is not object", i),
@@ -126,5 +128,122 @@ func handleSearchOrCreate() {
 
 		result["data"] = found[0]
 		return ctx.JSON(result)
+	})
+}
+
+func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
+	if request.Filter == nil || len(request.Filter) == 0 || request.Data == nil || len(request.Data.([]interface{})) == 0 {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: "Nothing to look for or create",
+		})
+		return
+	}
+
+	createData := request.Data.([]interface{})[0].(map[string]interface{})
+	if request.Data.([]interface{})[0] != nil {
+		delete(createData, "$or")
+		delete(createData, "$order")
+		delete(createData, "$max")
+	}
+
+	if request.Filter["$or"] != nil {
+		if reflect.TypeOf(request.Filter["$or"]).String() != "[]interface {}" {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: "$or option must be array",
+			})
+			return
+		}
+
+		if len(request.Filter["$or"].([]interface{})) == 0 {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: "$or option is empty",
+			})
+			return
+		}
+
+		for i, or := range request.Filter["$or"].([]interface{}) {
+			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
+				ws.WriteJSON(structure.WebsocketAnswer{
+					Error:   true,
+					Message: fmt.Sprintf("$or option with index %d is not object", i),
+				})
+				return
+			}
+		}
+	}
+
+	if request.Filter != nil {
+		delete(request.Filter, "$order")
+		delete(request.Filter, "$max")
+	}
+
+	found := memcache.Get(request.Database, request.Collection, request.Filter, 0)
+	result := map[string]interface{}{
+		"created": false,
+	}
+
+	if found == nil {
+		result["created"] = true
+		id := generateID(LengthOfID)
+		document := request.Data.([]interface{})[0].(map[string]interface{})
+		document["_id"] = id
+
+		if _, err := os.Stat(fmt.Sprintf("./data/%s/%s", request.Database, request.Collection)); os.IsNotExist(err) {
+			err := os.MkdirAll(fmt.Sprintf("./data/%s/%s", request.Database, request.Collection), os.ModePerm)
+			if err != nil {
+				ws.WriteJSON(structure.WebsocketAnswer{
+					Error:   true,
+					Message: err.Error(),
+				})
+				return
+			}
+		}
+
+		file, err := os.Create(fmt.Sprintf("./data/%s/%s/%s.db", request.Database, request.Collection, id))
+		if err != nil {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: err.Error(),
+			})
+			return
+		}
+
+		encoded, err := json.Marshal(document)
+		if err != nil {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: err.Error(),
+			})
+			return
+		}
+
+		if _, err := file.WriteString(string(encoded)); err != nil {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:   true,
+				Message: err.Error(),
+			})
+			return
+		}
+
+		_ = file.Close()
+
+		memcache.Cache.Lock()
+		memcache.CacheSet(request.Database, request.Collection, id, document)
+		memcache.Cache.Unlock()
+		result["data"] = document
+
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Data: result,
+		})
+
+		return
+	}
+
+	result["data"] = found[0]
+	ws.WriteJSON(structure.WebsocketAnswer{
+		Data: result,
 	})
 }
