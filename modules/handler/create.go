@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -33,7 +34,7 @@ func handleCreate() {
 		if len(data.Create) == 0 {
 			return ctx.JSON(fiber.Map{
 				"success": false,
-				"message": "Nothing to create",
+				"message": structure.NOTHING,
 			})
 		}
 
@@ -44,7 +45,7 @@ func handleCreate() {
 				created = append(created, map[string]interface{}{
 					"created": false,
 					"skipped": true,
-					"reason":  "Object is empty",
+					"reason":  structure.EMPTY_DATA,
 				})
 				continue
 			}
@@ -53,7 +54,7 @@ func handleCreate() {
 				created = append(created, map[string]interface{}{
 					"created": false,
 					"skipped": true,
-					"reason":  "ID is locked property",
+					"reason":  fmt.Sprintf(structure.LOCK, "_id"),
 				})
 				continue
 			}
@@ -62,7 +63,7 @@ func handleCreate() {
 				created = append(created, map[string]interface{}{
 					"created": false,
 					"skipped": true,
-					"reason":  "$order is locked property",
+					"reason":  fmt.Sprintf(structure.LOCK, "$order"),
 				})
 				continue
 			}
@@ -71,7 +72,7 @@ func handleCreate() {
 				created = append(created, map[string]interface{}{
 					"created": false,
 					"skipped": true,
-					"reason":  "$max is locked property",
+					"reason":  fmt.Sprintf(structure.LOCK, "$max"),
 				})
 				continue
 			}
@@ -80,7 +81,7 @@ func handleCreate() {
 				created = append(created, map[string]interface{}{
 					"created": false,
 					"skipped": true,
-					"reason":  "$or is locked property",
+					"reason":  fmt.Sprintf(structure.LOCK, "$order"),
 				})
 				continue
 			}
@@ -144,7 +145,7 @@ func handleCreate() {
 				created = append(created, map[string]interface{}{
 					"_id":     id,
 					"created": false,
-					"reason":  "This id is already in usage",
+					"reason":  structure.ID_BANNED,
 				})
 			}
 		}
@@ -157,7 +158,7 @@ func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 	if len(request.Data.([]interface{})) == 0 {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
-			Message: "Nothing to create",
+			Message: structure.NOTHING,
 		})
 		return
 	}
@@ -165,13 +166,22 @@ func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 	path.Create()
 	var created []map[string]interface{}
 	for _, createData := range request.Data.([]interface{}) {
+		if reflect.TypeOf(createData).String() != "map[string]interface {}" {
+			created = append(created, map[string]interface{}{
+				"created": false,
+				"skipped": true,
+				"reason":  structure.INVALID_STRUCTURE,
+			})
+			continue
+		}
+
 		create := createData.(map[string]interface{})
 
 		if len(create) == 0 {
 			created = append(created, map[string]interface{}{
 				"created": false,
 				"skipped": true,
-				"reason":  "Object is empty",
+				"reason":  structure.EMPTY_DATA,
 			})
 			continue
 		}
@@ -180,7 +190,7 @@ func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 			created = append(created, map[string]interface{}{
 				"created": false,
 				"skipped": true,
-				"reason":  "ID is locked property",
+				"reason":  fmt.Sprintf(structure.LOCK, "_id"),
 			})
 			continue
 		}
@@ -189,7 +199,7 @@ func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 			created = append(created, map[string]interface{}{
 				"created": false,
 				"skipped": true,
-				"reason":  "$order is locked property",
+				"reason":  fmt.Sprintf(structure.LOCK, "$order"),
 			})
 			continue
 		}
@@ -198,7 +208,7 @@ func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 			created = append(created, map[string]interface{}{
 				"created": false,
 				"skipped": true,
-				"reason":  "$max is locked property",
+				"reason":  fmt.Sprintf(structure.LOCK, "$max"),
 			})
 			continue
 		}
@@ -207,7 +217,7 @@ func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 			created = append(created, map[string]interface{}{
 				"created": false,
 				"skipped": true,
-				"reason":  "$or is locked property",
+				"reason":  fmt.Sprintf(structure.LOCK, "$or"),
 			})
 			continue
 		}
@@ -271,7 +281,7 @@ func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 			created = append(created, map[string]interface{}{
 				"_id":     id,
 				"created": false,
-				"reason":  "This id is already in usage",
+				"reason":  structure.ID_BANNED,
 			})
 		}
 	}

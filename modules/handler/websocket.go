@@ -3,6 +3,7 @@ package handler
 import (
 	"RediDB/modules/config"
 	"RediDB/modules/structure"
+	"reflect"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -45,34 +46,66 @@ func HandleWS() {
 				if len(request.Database) == 0 {
 					ws.WriteJSON(structure.WebsocketAnswer{
 						Error:   true,
-						Message: "<database> cannot be empty",
+						Message: structure.INVALID_DATABASE,
 					})
 				}
 
 				if len(request.Collection) == 0 {
 					ws.WriteJSON(structure.WebsocketAnswer{
 						Error:   true,
-						Message: "<collection> cannot be empty",
+						Message: structure.INVALID_COLLECTION,
 					})
 				}
 
 				switch request.Type {
 				case "create":
+					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
+						ws.WriteJSON(structure.WebsocketAnswer{
+							Error:   true,
+							Message: structure.METHOD_NOT_ALLOWED,
+						})
+						return
+					}
+
 					WSHandleCreate(ws, request)
 
 				case "delete":
 					WSHandleDelete(ws, request)
 
 				case "update":
+					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
+						ws.WriteJSON(structure.WebsocketAnswer{
+							Error:   true,
+							Message: structure.METHOD_NOT_ALLOWED,
+						})
+						return
+					}
+
 					WSHandleUpdate(ws, request)
 
 				case "instantUpdate":
+					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
+						ws.WriteJSON(structure.WebsocketAnswer{
+							Error:   true,
+							Message: structure.METHOD_NOT_ALLOWED,
+						})
+						return
+					}
+
 					WSHandleInstantUpdate(ws, request)
 
 				case "search":
 					WSHandleSearch(ws, request)
 
 				case "searchOrCreate":
+					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
+						ws.WriteJSON(structure.WebsocketAnswer{
+							Error:   true,
+							Message: structure.METHOD_NOT_ALLOWED,
+						})
+						return
+					}
+
 					WSHandleSearchOrCreate(ws, request)
 
 				default:

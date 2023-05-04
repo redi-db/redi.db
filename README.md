@@ -1,7 +1,9 @@
 # Redi.db
 
-**Libraries that can be used to work with RediDB**
+> RediDB is a lightweight database in Non-JSON format.
+
 <br><br/>
+**Libraries that can be used to work with RediDB**: <br><br/>
 
 # [Node.JS](https://www.npmjs.com/package/redi.db.js)
 

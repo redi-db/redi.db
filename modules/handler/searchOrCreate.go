@@ -32,7 +32,7 @@ func handleSearchOrCreate() {
 		if data.Filter == nil || len(data.Filter) == 0 || data.CreateData == nil || len(data.CreateData) == 0 {
 			return ctx.JSON(fiber.Map{
 				"success": false,
-				"message": "Nothing to look for or create",
+				"message": structure.EMPTY_DATA,
 			})
 		}
 
@@ -46,14 +46,14 @@ func handleSearchOrCreate() {
 			if reflect.TypeOf(data.Filter["$or"]).String() != "[]interface {}" {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$or option must be array",
+					"message": fmt.Sprintf(structure.MUST_BY, "$or", "array"),
 				})
 			}
 
 			if len(data.Filter["$or"].([]interface{})) == 0 {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$or option is empty",
+					"message": structure.EMPTY_DATA,
 				})
 			}
 
@@ -61,7 +61,7 @@ func handleSearchOrCreate() {
 				if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
 					return ctx.JSON(fiber.Map{
 						"success": false,
-						"message": fmt.Sprintf("$or option with index %d is not object", i),
+						"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
 					})
 				}
 			}
@@ -135,12 +135,30 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 	if request.Filter == nil || len(request.Filter) == 0 || request.Data == nil || len(request.Data.([]interface{})) == 0 {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
-			Message: "Nothing to look for or create",
+			Message: structure.EMPTY_DATA,
 		})
 		return
 	}
 
+	if reflect.TypeOf(request.Data).String() != "[]interface {}" || request.Data.([]interface{})[0] == nil || reflect.TypeOf(request.Data.([]interface{})[0]).String() != "map[string]interface {}" {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: structure.INVALID_STRUCTURE,
+		})
+
+		return
+	}
+
 	createData := request.Data.([]interface{})[0].(map[string]interface{})
+	if len(createData) == 0 {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: structure.INVALID_STRUCTURE,
+		})
+
+		return
+	}
+
 	if request.Data.([]interface{})[0] != nil {
 		delete(createData, "$or")
 		delete(createData, "$order")
@@ -151,7 +169,7 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 		if reflect.TypeOf(request.Filter["$or"]).String() != "[]interface {}" {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$or option must be array",
+				Message: fmt.Sprintf(structure.MUST_BY, "$or", "array"),
 			})
 			return
 		}
@@ -159,7 +177,7 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 		if len(request.Filter["$or"].([]interface{})) == 0 {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$or option is empty",
+				Message: structure.EMPTY_DATA,
 			})
 			return
 		}
@@ -168,7 +186,7 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
 				ws.WriteJSON(structure.WebsocketAnswer{
 					Error:   true,
-					Message: fmt.Sprintf("$or option with index %d is not object", i),
+					Message: fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
 				})
 				return
 			}

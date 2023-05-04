@@ -22,7 +22,7 @@ var App = fiber.New(fiber.Config{
 })
 
 func init() {
-	if config.Get().Settings.WebSocketAllowed {
+	if config.Get().Web.WebSocketAllowed {
 		HandleWS()
 	}
 

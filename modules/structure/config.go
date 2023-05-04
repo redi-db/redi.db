@@ -4,15 +4,14 @@ type Config struct {
 	inited bool
 
 	Web struct {
-		Port int `yaml:"port"`
+		Port             int  `yaml:"port"`
+		WebSocketAllowed bool `yaml:"websocket_support"`
 	} `yaml:"server"`
 
 	Settings struct {
 		MaxThreads   int  `yaml:"max_threads"`
 		MaxData      int  `yaml:"max_data"`
 		CheckUpdates bool `yaml:"check_updates"`
-
-		WebSocketAllowed bool `yaml:"websocket_support"`
 	} `json:"settings"`
 
 	Database struct {

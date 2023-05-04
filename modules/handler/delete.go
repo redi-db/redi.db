@@ -36,14 +36,14 @@ func handleDelete() {
 			if reflect.TypeOf(data.Filter["$or"]).String() != "[]interface {}" {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$or option must be array",
+					"message": fmt.Sprintf(structure.MUST_BY, "$max", "array"),
 				})
 			}
 
 			if len(data.Filter["$or"].([]interface{})) == 0 {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$or option is empty",
+					"message": structure.EMPTY_DATA,
 				})
 			}
 
@@ -137,7 +137,7 @@ func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
 		if reflect.TypeOf(request.Filter["$or"]).String() != "[]interface {}" {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$or option must be array",
+				Message: fmt.Sprintf(structure.MUST_BY, "$or", "array"),
 			})
 			return
 		}
@@ -145,7 +145,7 @@ func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
 		if len(request.Filter["$or"].([]interface{})) == 0 {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$or option is empty",
+				Message: structure.EMPTY_DATA,
 			})
 			return
 		}
@@ -154,7 +154,7 @@ func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
 			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
 				ws.WriteJSON(structure.WebsocketAnswer{
 					Error:   true,
-					Message: fmt.Sprintf("$or option with index %d is not object", i),
+					Message: fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
 				})
 				return
 			}

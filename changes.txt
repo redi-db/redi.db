@@ -1,6 +1,8 @@
-Addenda:
-    + WebSocket support, which speeds up server response time
+Improvements:
+    + Answer structure has been improved
+
+Changes:
+    + In the configuration file, the "websocket" protocol setting has been moved to the "server" section
 
 Fixes:
-    + Filter "$or" could put server if value was nullable
-    + The "$max" filter worked strangely
+    + The "websocket" protocol could break the server in certain methods, causing it to go offline

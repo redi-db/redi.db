@@ -37,7 +37,7 @@ func handleSearch() {
 		if reflect.TypeOf(data.Filter["$max"]).String() != "float64" && reflect.TypeOf(data.Filter["$max"]).String() != "int" {
 			return ctx.JSON(fiber.Map{
 				"success": false,
-				"message": "$max option must be integer",
+				"message": fmt.Sprintf(structure.MUST_BY, "$max", "integer"),
 			})
 		}
 
@@ -45,7 +45,7 @@ func handleSearch() {
 			if reflect.TypeOf(data.Filter["$order"]).String() != "map[string]interface {}" {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$order option must be object with \"type\" and \"by\"",
+					"message": fmt.Sprintf(structure.MUST_BY, "$order", "\"type\" and \"by\""),
 				})
 			}
 
@@ -55,47 +55,29 @@ func handleSearch() {
 			if !orderTypeOk {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$order parameter \"type\" is required",
+					"message": fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"type\""),
 				})
 			}
 
 			if orderType != "desc" && orderType != "asc" {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$order parameter \"type\" must be \"desc\" and \"asc\" only",
+					"message": fmt.Sprintf(structure.REQUIRED_INVALID, "$order \"type\"", "\"desc\" and \"asc\""),
 				})
 			}
 
 			if !orderByOk {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$order parameter \"by\" is required",
+					"message": fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"by\""),
 				})
 			}
 
 			if reflect.TypeOf(orderBy).String() != "string" {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$order parameter \"by\" must be string",
+					"message": fmt.Sprintf(structure.MUST_BY, "\"by\"", "string"),
 				})
-			}
-		}
-
-		if data.Filter["$ew"] != nil {
-			if reflect.TypeOf(data.Filter["$ew"]).String() != "map[string]interface {}" {
-				return ctx.JSON(fiber.Map{
-					"success": false,
-					"message": "$ew option must be object",
-				})
-			}
-
-			for i, or := range data.Filter["$ew"].(map[string]any) {
-				if reflect.TypeOf(or).String() != "string" {
-					return ctx.JSON(fiber.Map{
-						"success": false,
-						"message": fmt.Sprintf("$ew parametr with index \"%s\" is not string", i),
-					})
-				}
 			}
 		}
 
@@ -103,14 +85,14 @@ func handleSearch() {
 			if reflect.TypeOf(data.Filter["$or"]).String() != "[]interface {}" {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$or option must be array",
+					"message": fmt.Sprintf(structure.MUST_BY, "$or", "array"),
 				})
 			}
 
 			if len(data.Filter["$or"].([]interface{})) == 0 {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$or option is empty",
+					"message": structure.EMPTY_DATA,
 				})
 			}
 
@@ -118,7 +100,7 @@ func handleSearch() {
 				if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
 					return ctx.JSON(fiber.Map{
 						"success": false,
-						"message": fmt.Sprintf("$or option with index %d is not object", i),
+						"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
 					})
 				}
 			}
@@ -128,7 +110,7 @@ func handleSearch() {
 		if int(max) < 0 {
 			return ctx.JSON(fiber.Map{
 				"success": false,
-				"message": "$max option must be >= 0",
+				"message": fmt.Sprintf(structure.MUST_BY, "$max", ">= 0"),
 			})
 		}
 
@@ -153,7 +135,7 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 	if reflect.TypeOf(request.Filter["$max"]).String() != "float64" && reflect.TypeOf(request.Filter["$max"]).String() != "int" {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
-			Message: "$max option must be integer",
+			Message: fmt.Sprintf(structure.MUST_BY, "$max", "integer"),
 		})
 
 		return
@@ -163,7 +145,7 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 		if reflect.TypeOf(request.Filter["$order"]).String() != "map[string]interface {}" {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$order option must be object with \"type\" and \"by\"",
+				Message: fmt.Sprintf(structure.MUST_BY, "$order", "\"type\" and \"by\""),
 			})
 
 			return
@@ -175,7 +157,7 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 		if !orderTypeOk {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$order parameter \"type\" is required",
+				Message: fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"type\""),
 			})
 
 			return
@@ -184,7 +166,7 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 		if orderType != "desc" && orderType != "asc" {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$order parameter \"type\" must be \"desc\" and \"asc\" only",
+				Message: fmt.Sprintf(structure.REQUIRED_INVALID, "$order \"type\"", "\"desc\" and \"asc\""),
 			})
 
 			return
@@ -193,7 +175,7 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 		if !orderByOk {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$order parameter \"by\" is required",
+				Message: fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"by\""),
 			})
 
 			return
@@ -202,32 +184,10 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 		if reflect.TypeOf(orderBy).String() != "string" {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$order parameter \"by\" must be string",
+				Message: fmt.Sprintf(structure.MUST_BY, "\"by\"", "string"),
 			})
 
 			return
-		}
-	}
-
-	if request.Filter["$ew"] != nil {
-		if reflect.TypeOf(request.Filter["$ew"]).String() != "map[string]interface {}" {
-			ws.WriteJSON(structure.WebsocketAnswer{
-				Error:   true,
-				Message: "$ew option must be object",
-			})
-
-			return
-		}
-
-		for i, or := range request.Filter["$ew"].(map[string]any) {
-			if reflect.TypeOf(or).String() != "string" {
-				ws.WriteJSON(structure.WebsocketAnswer{
-					Error:   true,
-					Message: fmt.Sprintf("$ew parametr with index \"%s\" is not string", i),
-				})
-
-				return
-			}
 		}
 	}
 
@@ -235,7 +195,7 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 		if reflect.TypeOf(request.Filter["$or"]).String() != "[]interface {}" {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$or option must be array",
+				Message: fmt.Sprintf(structure.MUST_BY, "$or", "array"),
 			})
 
 			return
@@ -244,7 +204,7 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 		if len(request.Filter["$or"].([]interface{})) == 0 {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$or option is empty",
+				Message: structure.EMPTY_DATA,
 			})
 
 			return
@@ -254,7 +214,7 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
 				ws.WriteJSON(structure.WebsocketAnswer{
 					Error:   true,
-					Message: fmt.Sprintf("$or option with index %d is not object", i),
+					Message: fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
 				})
 
 				return
@@ -266,7 +226,7 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 	if int(max) < 0 {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
-			Message: "$max option must be >= 0",
+			Message: fmt.Sprintf(structure.MUST_BY, "$max", ">= 0"),
 		})
 
 		return

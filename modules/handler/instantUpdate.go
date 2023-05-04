@@ -34,28 +34,28 @@ func handleInstantUpdate() {
 		if data.Data.Update == nil || len(data.Data.Update) == 0 {
 			return ctx.JSON(fiber.Map{
 				"success": false,
-				"message": "No data to update",
+				"message": structure.NOTHING,
 			})
 		}
 
 		if data.Data.Update["_id"] != nil {
 			return ctx.JSON(fiber.Map{
 				"success": false,
-				"message": "ID property cannot be changed",
+				"message": fmt.Sprintf(structure.LOCK, "_id"),
 			})
 		}
 
 		if data.Data.Update["$max"] != nil {
 			return ctx.JSON(fiber.Map{
 				"success": false,
-				"message": "$max property cannot be changed",
+				"message": fmt.Sprintf(structure.LOCK, "$max"),
 			})
 		}
 
 		if data.Data.Update["$order"] != nil {
 			return ctx.JSON(fiber.Map{
 				"success": false,
-				"message": "$order property cannot be changed",
+				"message": fmt.Sprintf(structure.LOCK, "$order"),
 			})
 		}
 
@@ -63,14 +63,14 @@ func handleInstantUpdate() {
 			if reflect.TypeOf(data.Data.Filter["$or"]).String() != "[]interface {}" {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$or option must be array",
+					"message": fmt.Sprintf(structure.MUST_BY, "$or", "array"),
 				})
 			}
 
 			if len(data.Data.Filter["$or"].([]interface{})) == 0 {
 				return ctx.JSON(fiber.Map{
 					"success": false,
-					"message": "$or option is empty",
+					"message": structure.EMPTY_DATA,
 				})
 			}
 
@@ -78,7 +78,7 @@ func handleInstantUpdate() {
 				if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
 					return ctx.JSON(fiber.Map{
 						"success": false,
-						"message": fmt.Sprintf("$or option with index %d is not object", i),
+						"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
 					})
 				}
 			}
@@ -130,15 +130,24 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 	if request.Data.([]interface{})[0].(map[string]interface{}) == nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
-			Message: "No data to update",
+			Message: structure.NOTHING,
 		})
+		return
+	}
+
+	if reflect.TypeOf(request.Data.([]interface{})[0]).String() != "map[string]interface {}" {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: "Invalid structure",
+		})
+
 		return
 	}
 
 	if request.Data.([]interface{})[0].(map[string]interface{})["_id"] != nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
-			Message: "ID property cannot be changed",
+			Message: fmt.Sprintf(structure.LOCK, "_id"),
 		})
 
 		return
@@ -147,7 +156,7 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 	if request.Data.([]interface{})[0].(map[string]interface{})["$max"] != nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
-			Message: "$max property cannot be changed",
+			Message: fmt.Sprintf(structure.LOCK, "$max"),
 		})
 
 		return
@@ -156,7 +165,7 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 	if request.Data.([]interface{})[0].(map[string]interface{})["$order"] != nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
-			Message: "$order property cannot be changed",
+			Message: fmt.Sprintf(structure.LOCK, "$order"),
 		})
 
 		return
@@ -166,7 +175,7 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 		if reflect.TypeOf(request.Filter["$or"]).String() != "[]interface {}" {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$or option must be array",
+				Message: fmt.Sprintf(structure.MUST_BY, "$or", "array"),
 			})
 
 			return
@@ -175,7 +184,7 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 		if len(request.Filter["$or"].([]interface{})) == 0 {
 			ws.WriteJSON(structure.WebsocketAnswer{
 				Error:   true,
-				Message: "$or option is empty",
+				Message: structure.EMPTY_DATA,
 			})
 
 			return
@@ -185,7 +194,7 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
 				ws.WriteJSON(structure.WebsocketAnswer{
 					Error:   true,
-					Message: fmt.Sprintf("$or option with index %d is not object", i),
+					Message: fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
 				})
 
 				return
