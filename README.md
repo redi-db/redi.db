@@ -1,6 +1,6 @@
 # Redi.db
 
-> RediDB is a lightweight database in Non-JSON format.
+> RediDB is a lightweight database in JSON format.
 
 <br><br/>
 **Libraries that can be used to work with RediDB**: <br><br/>
