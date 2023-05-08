@@ -26,3 +26,21 @@ Using the HTTP protocol allows you to access the database through a RESTful API.
 Using WebSockets allows you to establish a persistent connection between the client and the server, allowing for faster and more efficient data exchange. Clients can send requests and receive responses in real time without reloading the page or establishing a new connection.
 
 Overall, the Redi.db database offers many features that make it very attractive for various projects. It is lightweight, fast, supports custom search queries, and has support for HTTP and WebSockets protocols. If you are looking for a simple and efficient way to store data, the Redi.db database may be a great choice for you
+
+
+<h1>⬇️ Installing</h1>
+To download the finished, compiled version of the database, you can go to <a href="https://github.com/redi-db/redi.db/releases">releases</a> and download the latest version for your OS and architecture.
+
+<br>
+
+<h3>Installation steps:</h3>
+- Download the archive for your operating system<br>
+- Select and retrieve the desired architecture<br>
+- Open the executable file.<br>
+
+<br>
+
+After running the file, config.yml will appear in the current path with the settings of the available parameters. (each item is signed, it is impossible to make a mistake)
+
+<h4>🔺 If you are running on a Linux operating system and we get an error - you need to give rights.</h4>
+<pre>chmod -R 777 ./RediDB-x</pre>
