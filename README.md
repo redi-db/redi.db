@@ -1,3 +1,5 @@
+<br>
+
 <div align="center" markdown=1>
   <p align="center"><img src="https://i.imgur.com/CzXM1jx.png" style="width: 200px"></p>
 
@@ -8,7 +10,7 @@
 
 <br>
 
-<h1>🎉 Getting Started</h1>
+<h1 align="center">🎉 Getting Started</h1>
 Redi.db is a large and powerful data repository that is developed in the GoLang programming language. It provides an efficient, fast and reliable way to store, process and manage data.
 
 One of the main advantages of redi.db is its speed. This database has high performance and speed, which allows you to process huge amounts of data in a short time. This makes redi.db suitable for projects with high load, where speed plays an important role.
@@ -39,7 +41,7 @@ Overall, the Redi.db database offers many features that make it very attractive 
 
 <br>
 
-<h1>⬇️ Installing</h1>
+<h1 align="center">⬇️ Installing</h1>
 To download the finished, compiled version of the database, you can go to <a href="https://github.com/redi-db/redi.db/releases">releases</a> and download the latest version for your OS and architecture.
 
 <br>
@@ -58,7 +60,7 @@ After running the file, config.yml will appear in the current path with the sett
 
 <br>
 
-<h1>⚙️ How do I compile the project myself?</h1>
+<h1 align="center">⚙️ How do I compile the project myself?</h1>
 In order to build a project on our own, we need to download the source files. You can do this as in the <a href="https://github.com/redi-db/redi.db/releases">release</a> or by <a href="https://github.com/redi-db/redi.db/archive/refs/heads/main.zip">clicking on me =)</a>.
 
 To compile, we need golang, which you can <a href="https://go.dev/dl/">download here</a>. <br>
