@@ -8,8 +8,6 @@
   <a href='https://github.com/redi-db/redi.db/tree/main#%EF%B8%8F-how-do-i-compile-the-project-myself'>How compile</a>
 </div>
 
-<br>
-
 <h1 align="center">🎉 Getting Started</h1>
 Redi.db is a large and powerful data repository that is developed in the GoLang programming language. It provides an efficient, fast and reliable way to store, process and manage data.
 
