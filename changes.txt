@@ -1,8 +1,8 @@
-Improvements:
-    + Answer structure has been improved
+Additions:
+    + Changes to the standard configuration file for more understanding
+    + New "garbage" section in configuration
+    + Ability to more flexibly optimize server memory usage
 
 Changes:
-    + In the configuration file, the "websocket" protocol setting has been moved to the "server" section
-
-Fixes:
-    + The "websocket" protocol could break the server in certain methods, causing it to go offline
+    + Improved configuration structure and update checker module
+    + Standard parameter settings.max_data set to 10

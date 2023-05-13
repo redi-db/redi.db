@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/goccy/go-json"
@@ -30,6 +31,20 @@ func Load() {
 						log.Printf("Failed to read database data of %s/%s", database.Name(), collection.Name())
 						continue
 					}
+
+					sort.Slice(files, func(i, j int) bool {
+						current, err := files[i].Info()
+						if err != nil {
+							return false
+						}
+
+						next, err := files[j].Info()
+						if err != nil {
+							return false
+						}
+
+						return current.Size() < next.Size()
+					})
 
 					for _, file := range files {
 						if !file.IsDir() && strings.HasSuffix(file.Name(), ".db") {

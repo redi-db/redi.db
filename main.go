@@ -12,15 +12,21 @@ import (
 
 func init() {
 	log.Println("Preparing to start...")
+	config := config.Get()
 
-	threads := config.Get().Settings.MaxThreads
+	threads := config.Settings.MaxThreads
 	if threads < 10000 {
 		log.Panicln("Minimum count of settings.max_threads is 10000")
 	}
 
-	data := config.Get().Settings.MaxData
+	data := config.Settings.MaxData
 	if data < 1 {
 		log.Panicln("Minimum count of settings.max_data is 1")
+	}
+
+	garbage := config.Garbage
+	if garbage.Enabled && garbage.Interval < 1 {
+		log.Panicln("Minimum count of garbage.interval is 1")
 	}
 
 	debug.SetMaxThreads(threads)

@@ -1,6 +1,8 @@
 package config
 
 import (
+	_ "embed"
+
 	"RediDB/modules/structure"
 	"log"
 )
@@ -8,19 +10,9 @@ import (
 var cache structure.Config
 
 const configName = "./config.yml"
-const defaultConfig = `server:
-    port: 5000
-    websocket_support: true # It is desirable to use the ws protocol
 
-settings:
-    max_threads: 30000 # Maximum number of branches that will be received from the processor (The higher - the more load will be sustained)
-    max_data: 4 # Maximum amount of data in the query in mb
-    check_updates: true
-
-auth:
-    login: root
-    password: root
-`
+//go:embed ..\..\config.yml
+var defaultConfig string
 
 func init() {
 	if !isExits() {

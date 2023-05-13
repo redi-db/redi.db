@@ -14,6 +14,11 @@ type Config struct {
 		CheckUpdates bool `yaml:"check_updates"`
 	} `json:"settings"`
 
+	Garbage struct {
+		Enabled  bool `yaml:"enabled"`
+		Interval int  `yaml:"interval"`
+	} `yaml:"garbage"`
+
 	Database struct {
 		Login    string `yaml:"login"`
 		Password string `yaml:"password"`

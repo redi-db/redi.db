@@ -3,9 +3,10 @@
 <div align="center" markdown=1>
   <p align="center"><img src="https://i.imgur.com/CzXM1jx.png" style="width: 200px"></p>
 
-  <a href='https://github.com/redi-db/redi.db/tree/main#-getting-started'>Getting Started</a> • 
-  <a href="https://github.com/redi-db/redi.db/tree/main#%EF%B8%8F-installing">Installing</a> •
-  <a href='https://github.com/redi-db/redi.db/tree/main#%EF%B8%8F-how-do-i-compile-the-project-myself'>How compile</a>
+<a href='https://github.com/redi-db/redi.db/tree/main#-getting-started'>Getting Started</a> •
+<a href="https://github.com/redi-db/redi.db/tree/main#%EF%B8%8F-installing">Installing</a> •
+<a href='https://github.com/redi-db/redi.db/tree/main#%EF%B8%8F-how-do-i-compile-the-project-myself'>How compile</a>
+
 </div>
 
 <h1 align="center">🎉 Getting Started</h1>

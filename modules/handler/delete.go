@@ -124,6 +124,7 @@ func handleDelete() {
 		if deleted == nil {
 			deleted = make([]interface{}, 0)
 		}
+
 		return ctx.JSON(deleted)
 	})
 }

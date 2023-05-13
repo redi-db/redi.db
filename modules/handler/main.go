@@ -5,13 +5,15 @@ import (
 	"RediDB/modules/structure"
 	"RediDB/modules/updates"
 	"log"
+	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 )
 
-var LengthOfID = 30
+var LengthOfID = 18
 var App = fiber.New(fiber.Config{
 	DisableStartupMessage: true,
 	BodyLimit:             config.Get().Settings.MaxData * 1024 * 1024,
@@ -22,7 +24,8 @@ var App = fiber.New(fiber.Config{
 })
 
 func init() {
-	if config.Get().Web.WebSocketAllowed {
+	config := config.Get()
+	if config.Web.WebSocketAllowed {
 		HandleWS()
 	}
 
@@ -38,7 +41,7 @@ func init() {
 				})
 			}
 
-			if auth.Login != config.Get().Database.Login || auth.Password != config.Get().Database.Password {
+			if auth.Login != config.Database.Login || auth.Password != config.Database.Password {
 				return ctx.JSON(fiber.Map{
 					"success": false,
 					"message": "Authorization failed",
@@ -63,9 +66,9 @@ func init() {
 
 	App.Hooks().OnListen(func() error {
 		println()
-		log.Println("Served server on port " + strconv.Itoa(config.Get().Web.Port))
+		log.Println("Served server on port " + strconv.Itoa(config.Web.Port))
 
-		if config.Get().Settings.CheckUpdates {
+		if config.Settings.CheckUpdates {
 			version, updateRequired, err := updates.Check()
 			if err != nil {
 				log.Printf("Failed to check updates: %s", err.Error())
@@ -76,6 +79,16 @@ func init() {
 				log.Printf("New version is available: v%s (Current v%s)", version, updates.VERSION)
 			}
 		}
+
+		if config.Garbage.Enabled {
+			ticker := time.NewTicker(time.Duration(config.Garbage.Interval) * time.Minute)
+			go func() {
+				for range ticker.C {
+					runtime.GC()
+				}
+			}()
+		}
+
 		return nil
 	})
 
