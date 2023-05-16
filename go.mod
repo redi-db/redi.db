@@ -9,6 +9,11 @@ require (
 )
 
 require (
+	github.com/mitchellh/copystructure v1.2.0
+	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+)
+
+require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/fasthttp/websocket v1.5.2 // indirect
 	github.com/gofiber/websocket/v2 v2.1.6

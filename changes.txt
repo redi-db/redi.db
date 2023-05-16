@@ -1,8 +1,21 @@
-Additions:
-    + Changes to the standard configuration file for more understanding
-    + New "garbage" section in configuration
-    + Ability to more flexibly optimize server memory usage
-
 Changes:
-    + Improved configuration structure and update checker module
-    + Standard parameter settings.max_data set to 10
+    + New _id of document is 18
+
+Corrections:
+    + Configuration file had garbage.interval with default value of 0, but should be 5
+    + Parameter by in $order filter was not sorted with string type
+    + Parameter $or was skipping other available parameters ($max, $order, $omit, $only)
+    + Update method could cause server to crash if input is incorrect (WebSocket protocol)
+    + instantUpdate method had incorrect error message sending structure
+    + instantUpdate method could accept filter $or
+    + instantUpdate method could cause server to crash if input data is incorrect (WebSocket protocol)
+    + Filter $order could cause server to crash
+
+Optimization:
+    + Improved filter handling structure
+    + Filter processor became a little faster
+    + searchOrCreate method processed all documents when it should have stopped at the first one
+
+Additions:
+    + New filter $only
+    + New filter $omit

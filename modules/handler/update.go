@@ -45,46 +45,19 @@ func handleUpdate() {
 			})
 		}
 
-		if data.Data.Update["$max"] != nil {
-			return ctx.JSON(fiber.Map{
-				"success": false,
-				"message": fmt.Sprintf(structure.LOCK, "$max"),
-			})
+		if data.Data.Filter != nil {
+			delete(data.Data.Filter, "$order")
+			delete(data.Data.Filter, "$only")
+			delete(data.Data.Filter, "$omit")
+			delete(data.Data.Filter, "$max")
 		}
 
-		if data.Data.Update["$order"] != nil {
-			return ctx.JSON(fiber.Map{
-				"success": false,
-				"message": fmt.Sprintf(structure.LOCK, "$order"),
-			})
+		filter, err := handleHttpFilter(data.Data.Filter)
+		if len(err) > 0 {
+			return ctx.JSON(err)
 		}
 
-		if data.Data.Filter["$or"] != nil {
-			if reflect.TypeOf(data.Data.Filter["$or"]).String() != "[]interface {}" {
-				return ctx.JSON(fiber.Map{
-					"success": false,
-					"message": fmt.Sprintf(structure.MUST_BY, "$or", "array"),
-				})
-			}
-
-			if len(data.Data.Filter["$or"].([]interface{})) == 0 {
-				return ctx.JSON(fiber.Map{
-					"success": false,
-					"message": structure.EMPTY_DATA,
-				})
-			}
-
-			for i, or := range data.Data.Filter["$or"].([]interface{}) {
-				if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
-					return ctx.JSON(fiber.Map{
-						"success": false,
-						"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
-					})
-				}
-			}
-		}
-
-		found := memcache.Get(data.Database, data.Collection, data.Data.Filter, 0)
+		found := memcache.Get(data.Database, data.Collection, filter, 0)
 		if found == nil {
 			return ctx.JSON([]map[string]interface{}{})
 		}
@@ -135,7 +108,7 @@ func WSHandleUpdate(ws *websocket.Conn, request structure.WebsocketRequest) {
 		return
 	}
 
-	if reflect.TypeOf(request.Data.([]interface{})[0]).String() != "map[string]interface {}" {
+	if request.Data.([]interface{})[0] == nil || reflect.TypeOf(request.Data.([]interface{})[0]).String() != "map[string]interface {}" {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
 			Message: structure.INVALID_STRUCTURE,
@@ -150,6 +123,19 @@ func WSHandleUpdate(ws *websocket.Conn, request structure.WebsocketRequest) {
 			Message: fmt.Sprintf(structure.LOCK, "_id"),
 		})
 
+		return
+	}
+
+	if request.Filter != nil {
+		delete(request.Filter, "$order")
+		delete(request.Filter, "$only")
+		delete(request.Filter, "$omit")
+		delete(request.Filter, "$max")
+	}
+
+	filter, err := handleWSFilter(request.Filter)
+	if err.Error {
+		ws.WriteJSON(err)
 		return
 	}
 
@@ -171,38 +157,25 @@ func WSHandleUpdate(ws *websocket.Conn, request structure.WebsocketRequest) {
 		return
 	}
 
-	if request.Filter["$or"] != nil {
-		if reflect.TypeOf(request.Filter["$or"]).String() != "[]interface {}" {
-			ws.WriteJSON(structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$or", "array"),
-			})
+	if request.Data.([]interface{})[0].(map[string]interface{})["$only"] != nil {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: fmt.Sprintf(structure.LOCK, "$only"),
+		})
 
-			return
-		}
-
-		if len(request.Filter["$or"].([]interface{})) == 0 {
-			ws.WriteJSON(structure.WebsocketAnswer{
-				Error:   true,
-				Message: structure.EMPTY_DATA,
-			})
-
-			return
-		}
-
-		for i, or := range request.Filter["$or"].([]interface{}) {
-			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
-				ws.WriteJSON(structure.WebsocketAnswer{
-					Error:   true,
-					Message: fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
-				})
-
-				return
-			}
-		}
+		return
 	}
 
-	found := memcache.Get(request.Database, request.Collection, request.Filter, 0)
+	if request.Data.([]interface{})[0].(map[string]interface{})["$omit"] != nil {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: fmt.Sprintf(structure.LOCK, "$omit"),
+		})
+
+		return
+	}
+
+	found := memcache.Get(request.Database, request.Collection, filter, 0)
 	if found == nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Data: []interface{}{},

@@ -4,7 +4,9 @@ import (
 	"RediDB/modules/config"
 	"RediDB/modules/structure"
 	"RediDB/modules/updates"
+	"fmt"
 	"log"
+	"reflect"
 	"runtime"
 	"strconv"
 	"time"
@@ -107,4 +109,224 @@ func init() {
 			"message": "Bad Request",
 		})
 	})
+}
+
+func handleHttpFilter(filter map[string]interface{}) (map[string]interface{}, fiber.Map) {
+	if filter == nil {
+		return nil, nil
+	}
+
+	if filter["$max"] == nil {
+		filter["$max"] = 0.0
+	}
+
+	if reflect.TypeOf(filter["$max"]).String() != "float64" && reflect.TypeOf(filter["$max"]).String() != "int" {
+		return nil, fiber.Map{
+			"success": false,
+			"message": fmt.Sprintf(structure.MUST_BY, "$max", "integer"),
+		}
+	}
+
+	if filter["$only"] != nil {
+		if reflect.TypeOf(filter["$only"]).String() != "[]interface {}" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.MUST_BY, "$only", "array with strings"),
+			}
+		}
+
+		for i, onlyValue := range filter["$only"].([]interface{}) {
+			if onlyValue == nil || reflect.TypeOf(onlyValue).String() != "string" {
+				return nil, fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$only with index %d", i), "string"),
+				}
+			}
+		}
+	}
+
+	if filter["$omit"] != nil {
+		if reflect.TypeOf(filter["$omit"]).String() != "[]interface {}" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.MUST_BY, "$omit", "array with strings"),
+			}
+		}
+
+		for i, omitValue := range filter["$omit"].([]interface{}) {
+			if omitValue == nil || reflect.TypeOf(omitValue).String() != "string" {
+				return nil, fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$omit with index %d", i), "string"),
+				}
+			}
+		}
+	}
+
+	if filter["$order"] != nil {
+		if reflect.TypeOf(filter["$order"]).String() != "map[string]interface {}" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.MUST_BY, "$order", "\"type\" and \"by\""),
+			}
+		}
+
+		orderType, orderTypeOk := filter["$order"].(map[string]interface{})["type"]
+		orderBy, orderByOk := filter["$order"].(map[string]interface{})["by"]
+
+		if !orderTypeOk {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"type\""),
+			}
+		}
+
+		if orderType != "desc" && orderType != "asc" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.REQUIRED_INVALID, "$order \"type\"", "\"desc\" and \"asc\""),
+			}
+		}
+
+		if !orderByOk {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"by\""),
+			}
+		}
+
+		if reflect.TypeOf(orderBy).String() != "string" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.MUST_BY, "\"by\"", "string"),
+			}
+		}
+	}
+
+	if filter["$or"] != nil {
+		if reflect.TypeOf(filter["$or"]).String() != "[]interface {}" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.MUST_BY, "$or", "array"),
+			}
+		}
+
+		if len(filter["$or"].([]interface{})) == 0 {
+			return nil, fiber.Map{
+				"success": false,
+				"message": structure.EMPTY_DATA,
+			}
+		}
+
+		for i, or := range filter["$or"].([]interface{}) {
+			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
+				return nil, fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
+				}
+			}
+		}
+	}
+
+	max := filter["$max"].(float64)
+	if int(max) < 0 {
+		return nil, fiber.Map{
+			"success": false,
+			"message": fmt.Sprintf(structure.MUST_BY, "$max", ">= 0"),
+		}
+	}
+
+	filter["$max"] = int(max)
+	return filter, nil
+}
+
+func handleWSFilter(filter map[string]interface{}) (map[string]interface{}, structure.WebsocketAnswer) {
+	if filter["$max"] == nil {
+		filter["$max"] = 0.0
+	}
+
+	if reflect.TypeOf(filter["$max"]).String() != "float64" && reflect.TypeOf(filter["$max"]).String() != "int" {
+		return nil, structure.WebsocketAnswer{
+			Error:   true,
+			Message: fmt.Sprintf(structure.MUST_BY, "$max", "integer"),
+		}
+	}
+
+	if filter["$order"] != nil {
+		if reflect.TypeOf(filter["$order"]).String() != "map[string]interface {}" {
+			return nil, structure.WebsocketAnswer{
+				Error:   true,
+				Message: fmt.Sprintf(structure.MUST_BY, "$order", "\"type\" and \"by\""),
+			}
+		}
+
+		orderType, orderTypeOk := filter["$order"].(map[string]interface{})["type"]
+		orderBy, orderByOk := filter["$order"].(map[string]interface{})["by"]
+
+		if !orderTypeOk {
+			return nil, structure.WebsocketAnswer{
+				Error:   true,
+				Message: fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"type\""),
+			}
+		}
+
+		if orderType != "desc" && orderType != "asc" {
+			return nil, structure.WebsocketAnswer{
+				Error:   true,
+				Message: fmt.Sprintf(structure.REQUIRED_INVALID, "$order \"type\"", "\"desc\" and \"asc\""),
+			}
+		}
+
+		if !orderByOk {
+			return nil, structure.WebsocketAnswer{
+				Error:   true,
+				Message: fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"by\""),
+			}
+		}
+
+		if reflect.TypeOf(orderBy).String() != "string" {
+			return nil, structure.WebsocketAnswer{
+				Error:   true,
+				Message: fmt.Sprintf(structure.MUST_BY, "\"by\"", "string"),
+			}
+		}
+	}
+
+	if filter["$or"] != nil {
+		if reflect.TypeOf(filter["$or"]).String() != "[]interface {}" {
+			return nil, structure.WebsocketAnswer{
+				Error:   true,
+				Message: fmt.Sprintf(structure.MUST_BY, "$or", "array"),
+			}
+		}
+
+		if len(filter["$or"].([]interface{})) == 0 {
+			return nil, structure.WebsocketAnswer{
+				Error:   true,
+				Message: structure.EMPTY_DATA,
+			}
+		}
+
+		for i, or := range filter["$or"].([]interface{}) {
+			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
+				return nil, structure.WebsocketAnswer{
+					Error:   true,
+					Message: fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
+				}
+			}
+		}
+	}
+
+	max := filter["$max"].(float64)
+	if int(max) < 0 {
+		return nil, structure.WebsocketAnswer{
+			Error:   true,
+			Message: fmt.Sprintf(structure.MUST_BY, "$max", ">= 0"),
+		}
+	}
+
+	filter["$max"] = int(filter["$max"].(float64))
+	return filter, structure.WebsocketAnswer{
+		Error: false,
+	}
 }

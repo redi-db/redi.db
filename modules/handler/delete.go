@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -32,32 +31,17 @@ func handleDelete() {
 			data.Filter = make(map[string]interface{})
 		}
 
-		if data.Filter["$or"] != nil {
-			if reflect.TypeOf(data.Filter["$or"]).String() != "[]interface {}" {
-				return ctx.JSON(fiber.Map{
-					"success": false,
-					"message": fmt.Sprintf(structure.MUST_BY, "$max", "array"),
-				})
-			}
+		delete(data.Filter, "$order")
+		delete(data.Filter, "$only")
+		delete(data.Filter, "$omit")
+		delete(data.Filter, "$max")
 
-			if len(data.Filter["$or"].([]interface{})) == 0 {
-				return ctx.JSON(fiber.Map{
-					"success": false,
-					"message": structure.EMPTY_DATA,
-				})
-			}
-
-			for i, or := range data.Filter["$or"].([]interface{}) {
-				if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
-					return ctx.JSON(fiber.Map{
-						"success": false,
-						"message": fmt.Sprintf("$or option with index %d is not object", i),
-					})
-				}
-			}
+		filter, err := handleHttpFilter(data.Filter)
+		if len(err) > 0 {
+			return ctx.JSON(err)
 		}
 
-		found := memcache.Get(data.Database, data.Collection, data.Filter, 0)
+		found := memcache.Get(data.Database, data.Collection, filter, 0)
 		if found == nil {
 			return ctx.JSON([]interface{}{})
 		}
@@ -134,35 +118,18 @@ func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
 		request.Filter = make(map[string]interface{})
 	}
 
-	if request.Filter["$or"] != nil {
-		if reflect.TypeOf(request.Filter["$or"]).String() != "[]interface {}" {
-			ws.WriteJSON(structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$or", "array"),
-			})
-			return
-		}
+	delete(request.Filter, "$order")
+	delete(request.Filter, "$only")
+	delete(request.Filter, "$omit")
+	delete(request.Filter, "$max")
 
-		if len(request.Filter["$or"].([]interface{})) == 0 {
-			ws.WriteJSON(structure.WebsocketAnswer{
-				Error:   true,
-				Message: structure.EMPTY_DATA,
-			})
-			return
-		}
-
-		for i, or := range request.Filter["$or"].([]interface{}) {
-			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
-				ws.WriteJSON(structure.WebsocketAnswer{
-					Error:   true,
-					Message: fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
-				})
-				return
-			}
-		}
+	filter, err := handleWSFilter(request.Filter)
+	if err.Error {
+		ws.WriteJSON(err)
+		return
 	}
 
-	found := memcache.Get(request.Database, request.Collection, request.Filter, 0)
+	found := memcache.Get(request.Database, request.Collection, filter, 0)
 	if found == nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Data: []interface{}{},

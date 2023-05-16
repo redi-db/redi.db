@@ -59,32 +59,26 @@ func handleInstantUpdate() {
 			})
 		}
 
-		if data.Data.Filter["$or"] != nil {
-			if reflect.TypeOf(data.Data.Filter["$or"]).String() != "[]interface {}" {
-				return ctx.JSON(fiber.Map{
-					"success": false,
-					"message": fmt.Sprintf(structure.MUST_BY, "$or", "array"),
-				})
-			}
-
-			if len(data.Data.Filter["$or"].([]interface{})) == 0 {
-				return ctx.JSON(fiber.Map{
-					"success": false,
-					"message": structure.EMPTY_DATA,
-				})
-			}
-
-			for i, or := range data.Data.Filter["$or"].([]interface{}) {
-				if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
-					return ctx.JSON(fiber.Map{
-						"success": false,
-						"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
-					})
-				}
-			}
+		if data.Data.Update["$only"] != nil {
+			return ctx.JSON(fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.LOCK, "$only"),
+			})
 		}
 
-		found := memcache.Get(data.Database, data.Collection, data.Data.Filter, 0)
+		if data.Data.Update["$omit"] != nil {
+			return ctx.JSON(fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.LOCK, "$omit"),
+			})
+		}
+
+		filter, err := handleHttpFilter(data.Data.Filter)
+		if err != nil {
+			return ctx.JSON(err)
+		}
+
+		found := memcache.Get(data.Database, data.Collection, filter, 0)
 		if found == nil {
 			return ctx.JSON([]map[string]interface{}{})
 		}
@@ -127,7 +121,16 @@ func handleInstantUpdate() {
 }
 
 func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketRequest) {
-	if request.Data.([]interface{})[0].(map[string]interface{}) == nil {
+	if request.Data == nil || len(request.Data.([]interface{})) == 0 {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: structure.EMPTY_DATA,
+		})
+
+		return
+	}
+
+	if request.Data.([]interface{})[0] == nil || request.Data.([]interface{})[0].(map[string]interface{}) == nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
 			Message: structure.NOTHING,
@@ -135,10 +138,10 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 		return
 	}
 
-	if reflect.TypeOf(request.Data.([]interface{})[0]).String() != "map[string]interface {}" {
+	if request.Data.([]interface{})[0] == nil || reflect.TypeOf(request.Data.([]interface{})[0]).String() != "map[string]interface {}" {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:   true,
-			Message: "Invalid structure",
+			Message: structure.INVALID_STRUCTURE,
 		})
 
 		return
@@ -171,38 +174,49 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 		return
 	}
 
-	if request.Filter["$or"] != nil {
-		if reflect.TypeOf(request.Filter["$or"]).String() != "[]interface {}" {
-			ws.WriteJSON(structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$or", "array"),
-			})
+	if request.Data.([]interface{})[0].(map[string]interface{})["$only"] != nil {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: fmt.Sprintf(structure.LOCK, "$only"),
+		})
 
-			return
-		}
-
-		if len(request.Filter["$or"].([]interface{})) == 0 {
-			ws.WriteJSON(structure.WebsocketAnswer{
-				Error:   true,
-				Message: structure.EMPTY_DATA,
-			})
-
-			return
-		}
-
-		for i, or := range request.Filter["$or"].([]interface{}) {
-			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
-				ws.WriteJSON(structure.WebsocketAnswer{
-					Error:   true,
-					Message: fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
-				})
-
-				return
-			}
-		}
+		return
 	}
 
-	found := memcache.Get(request.Database, request.Collection, request.Filter, 0)
+	if request.Data.([]interface{})[0].(map[string]interface{})["$omit"] != nil {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: fmt.Sprintf(structure.LOCK, "$omit"),
+		})
+
+		return
+	}
+
+	if request.Data.([]interface{})[0].(map[string]interface{})["$or"] != nil {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: fmt.Sprintf(structure.LOCK, "$or"),
+		})
+
+		return
+	}
+
+	if request.Data.([]interface{})[0].(map[string]interface{})["$or"] != nil {
+		ws.WriteJSON(structure.WebsocketAnswer{
+			Error:   true,
+			Message: fmt.Sprintf(structure.LOCK, "$or"),
+		})
+
+		return
+	}
+
+	filter, err := handleWSFilter(request.Filter)
+	if err.Error {
+		ws.WriteJSON(err)
+		return
+	}
+
+	found := memcache.Get(request.Database, request.Collection, filter, 0)
 	if found == nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Data: []interface{}{},
