@@ -42,29 +42,44 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	var only []interface{}
 	var omit []interface{}
 
-	if filter != nil && filter["$max"] != nil {
-		delete(filter, "$max")
+	var greatThen map[string]interface{}
+	var lessThan map[string]interface{}
+
+	if filter != nil {
+		if filter["$max"] != nil {
+			delete(filter, "$max")
+		}
+
+		if filter != nil && filter["$order"] != nil {
+			sort = filter["$order"].(map[string]interface{})
+			delete(filter, "$order")
+		}
+
+		if filter != nil && filter["$only"] != nil {
+			only = filter["$only"].([]interface{})
+			delete(filter, "$only")
+		}
+
+		if filter["$omit"] != nil {
+			omit = filter["$omit"].([]interface{})
+			delete(filter, "$omit")
+		}
+
+		if filter["$gt"] != nil {
+			greatThen = filter["$gt"].(map[string]interface{})
+			delete(filter, "$gt")
+		}
+
+		if filter["$lt"] != nil {
+			lessThan = filter["$lt"].(map[string]interface{})
+			delete(filter, "$lt")
+		}
 	}
 
 	if max == 0 {
 		max = -1
 	} else {
 		max--
-	}
-
-	if filter != nil && filter["$order"] != nil {
-		sort = filter["$order"].(map[string]interface{})
-		delete(filter, "$order")
-	}
-
-	if filter != nil && filter["$only"] != nil {
-		only = filter["$only"].([]interface{})
-		delete(filter, "$only")
-	}
-
-	if filter != nil && filter["$omit"] != nil {
-		omit = filter["$omit"].([]interface{})
-		delete(filter, "$omit")
 	}
 
 	Cache.Lock()
@@ -82,6 +97,26 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 
 		if matchesFilter(document, filter) {
 			result = append(result, document)
+		}
+	}
+
+	if len(greatThen) > 0 {
+		for i := len(result) - 1; i >= 0; i-- {
+			document := result[i]
+			value, contains := getValue(document, greatThen["by"])
+			if contains && reflect.TypeOf(value).String() == "float64" && value.(float64) < greatThen["value"].(float64) {
+				result = RemoveIndex(result, i)
+			}
+		}
+	}
+
+	if len(lessThan) > 0 {
+		for i := len(result) - 1; i >= 0; i-- {
+			document := result[i]
+			value, contains := getValue(document, lessThan["by"])
+			if contains && reflect.TypeOf(value).String() == "float64" && value.(float64) > lessThan["value"].(float64) {
+				result = RemoveIndex(result, i)
+			}
 		}
 	}
 
@@ -258,4 +293,11 @@ func removeDocumentValue(document map[string]interface{}, key string) map[string
 
 	delete(document, key)
 	return document
+}
+
+func RemoveIndex(s []map[string]interface{}, index int) []map[string]interface{} {
+	if index < 0 || index >= len(s) {
+		return s
+	}
+	return append(s[:index], s[index+1:]...)
 }
