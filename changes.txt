@@ -1,3 +1,2 @@
-Additions:
-    + New filter $gt - returns documents that are larger than your value (only int values)
-    + New filter $lt - returns documents that are smaller than your value (only int values)
+Corrections:
+    + Each request requires requestID, for responses to work correctly

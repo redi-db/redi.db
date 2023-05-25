@@ -1,6 +1,7 @@
 package structure
 
 const (
+	INVALID_REQUEST_ID = "<requestID> cannot be empty or less than 1"
 	INVALID_DATABASE   = "<database> cannot be empty"
 	INVALID_COLLECTION = "<collection> cannot be empty"
 )

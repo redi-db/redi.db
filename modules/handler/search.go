@@ -47,7 +47,7 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 		request.Filter = make(map[string]interface{})
 	}
 
-	filter, err := handleWSFilter(request.Filter)
+	filter, err := handleWSFilter(request.Filter, request.RequestID)
 	if err.Error {
 		ws.WriteJSON(err)
 		return
@@ -56,13 +56,15 @@ func WSHandleSearch(ws *websocket.Conn, request structure.WebsocketRequest) {
 	found := memcache.Get(request.Database, request.Collection, filter, filter["$max"].(int))
 	if found == nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Data: []interface{}{},
+			RequestID: request.RequestID,
+			Data:      []interface{}{},
 		})
 
 		return
 	}
 
 	ws.WriteJSON(structure.WebsocketAnswer{
-		Data: found,
+		RequestID: request.RequestID,
+		Data:      found,
 	})
 }

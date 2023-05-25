@@ -123,7 +123,7 @@ func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
 	delete(request.Filter, "$omit")
 	delete(request.Filter, "$max")
 
-	filter, err := handleWSFilter(request.Filter)
+	filter, err := handleWSFilter(request.Filter, request.RequestID)
 	if err.Error {
 		ws.WriteJSON(err)
 		return
@@ -132,7 +132,8 @@ func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
 	found := memcache.Get(request.Database, request.Collection, filter, 0)
 	if found == nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Data: []interface{}{},
+			RequestID: request.RequestID,
+			Data:      []interface{}{},
 		})
 		return
 	}
@@ -201,6 +202,7 @@ func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
 	}
 
 	ws.WriteJSON(structure.WebsocketAnswer{
-		Data: deleted,
+		RequestID: request.RequestID,
+		Data:      deleted,
 	})
 }

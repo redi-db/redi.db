@@ -286,23 +286,25 @@ func handleHttpFilter(filter map[string]interface{}) (map[string]interface{}, fi
 	return filter, nil
 }
 
-func handleWSFilter(filter map[string]interface{}) (map[string]interface{}, structure.WebsocketAnswer) {
+func handleWSFilter(filter map[string]interface{}, requestID int) (map[string]interface{}, structure.WebsocketAnswer) {
 	if filter["$max"] == nil {
 		filter["$max"] = 0.0
 	}
 
 	if reflect.TypeOf(filter["$max"]).String() != "float64" && reflect.TypeOf(filter["$max"]).String() != "int" {
 		return nil, structure.WebsocketAnswer{
-			Error:   true,
-			Message: fmt.Sprintf(structure.MUST_BY, "$max", "integer"),
+			Error:     true,
+			RequestID: requestID,
+			Message:   fmt.Sprintf(structure.MUST_BY, "$max", "integer"),
 		}
 	}
 
 	if filter["$order"] != nil {
 		if reflect.TypeOf(filter["$order"]).String() != "map[string]interface {}" {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$order", "\"type\" and \"by\""),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$order", "\"type\" and \"by\""),
 			}
 		}
 
@@ -311,29 +313,33 @@ func handleWSFilter(filter map[string]interface{}) (map[string]interface{}, stru
 
 		if !orderTypeOk {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"type\""),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"type\""),
 			}
 		}
 
 		if orderType != "desc" && orderType != "asc" {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.REQUIRED_INVALID, "$order \"type\"", "\"desc\" and \"asc\""),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.REQUIRED_INVALID, "$order \"type\"", "\"desc\" and \"asc\""),
 			}
 		}
 
 		if !orderByOk {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"by\""),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.REQUIRED_FIELD, "$order \"by\""),
 			}
 		}
 
 		if reflect.TypeOf(orderBy).String() != "string" {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "\"by\"", "string"),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "\"by\"", "string"),
 			}
 		}
 	}
@@ -341,23 +347,26 @@ func handleWSFilter(filter map[string]interface{}) (map[string]interface{}, stru
 	if filter["$or"] != nil {
 		if reflect.TypeOf(filter["$or"]).String() != "[]interface {}" {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$or", "array"),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$or", "array"),
 			}
 		}
 
 		if len(filter["$or"].([]interface{})) == 0 {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: structure.EMPTY_DATA,
+				Error:     true,
+				RequestID: requestID,
+				Message:   structure.EMPTY_DATA,
 			}
 		}
 
 		for i, or := range filter["$or"].([]interface{}) {
 			if or == nil || reflect.TypeOf(or).String() != "map[string]interface {}" {
 				return nil, structure.WebsocketAnswer{
-					Error:   true,
-					Message: fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
+					Error:     true,
+					RequestID: requestID,
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
 				}
 			}
 		}
@@ -366,22 +375,25 @@ func handleWSFilter(filter map[string]interface{}) (map[string]interface{}, stru
 	if filter["$gt"] != nil {
 		if reflect.TypeOf(filter["$gt"]).String() != "map[string]interface {}" {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$gt", "object"),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$gt", "object"),
 			}
 		}
 
 		if filter["$gt"].(map[string]interface{})["by"] == nil || reflect.TypeOf(filter["$gt"].(map[string]interface{})["by"]).String() != "string" {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$gt \"by\"", "string"),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$gt \"by\"", "string"),
 			}
 		}
 
 		if filter["$gt"].(map[string]interface{})["value"] == nil || reflect.TypeOf(filter["$gt"].(map[string]interface{})["value"]).String() != "float64" {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$gt \"value\"", "number"),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$gt \"value\"", "number"),
 			}
 		}
 	}
@@ -389,22 +401,25 @@ func handleWSFilter(filter map[string]interface{}) (map[string]interface{}, stru
 	if filter["$lt"] != nil {
 		if reflect.TypeOf(filter["$lt"]).String() != "map[string]interface {}" {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$lt", "object"),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$lt", "object"),
 			}
 		}
 
 		if filter["$lt"].(map[string]interface{})["by"] == nil || reflect.TypeOf(filter["$lt"].(map[string]interface{})["by"]).String() != "string" {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$lt \"by\"", "string"),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$lt \"by\"", "string"),
 			}
 		}
 
 		if filter["$lt"].(map[string]interface{})["value"] == nil || reflect.TypeOf(filter["$lt"].(map[string]interface{})["value"]).String() != "float64" {
 			return nil, structure.WebsocketAnswer{
-				Error:   true,
-				Message: fmt.Sprintf(structure.MUST_BY, "$lt \"value\"", "number"),
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$lt \"value\"", "number"),
 			}
 		}
 	}
@@ -412,13 +427,15 @@ func handleWSFilter(filter map[string]interface{}) (map[string]interface{}, stru
 	max := filter["$max"].(float64)
 	if int(max) < 0 {
 		return nil, structure.WebsocketAnswer{
-			Error:   true,
-			Message: fmt.Sprintf(structure.MUST_BY, "$max", ">= 0"),
+			Error:     true,
+			RequestID: requestID,
+			Message:   fmt.Sprintf(structure.MUST_BY, "$max", ">= 0"),
 		}
 	}
 
 	filter["$max"] = int(filter["$max"].(float64))
 	return filter, structure.WebsocketAnswer{
-		Error: false,
+		Error:     false,
+		RequestID: requestID,
 	}
 }

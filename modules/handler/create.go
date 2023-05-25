@@ -157,8 +157,9 @@ func handleCreate() {
 func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 	if len(request.Data.([]interface{})) == 0 {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: structure.NOTHING,
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   structure.NOTHING,
 		})
 		return
 	}
@@ -287,7 +288,8 @@ func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 	}
 
 	ws.WriteJSON(structure.WebsocketAnswer{
-		Data: created,
+		RequestID: request.RequestID,
+		Data:      created,
 	})
 }
 

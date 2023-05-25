@@ -118,16 +118,18 @@ func handleSearchOrCreate() {
 func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 	if request.Filter == nil || len(request.Filter) == 0 || request.Data == nil || len(request.Data.([]interface{})) == 0 {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: structure.EMPTY_DATA,
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   structure.EMPTY_DATA,
 		})
 		return
 	}
 
 	if reflect.TypeOf(request.Data).String() != "[]interface {}" || request.Data.([]interface{})[0] == nil || reflect.TypeOf(request.Data.([]interface{})[0]).String() != "map[string]interface {}" {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: structure.INVALID_STRUCTURE,
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   structure.INVALID_STRUCTURE,
 		})
 
 		return
@@ -136,8 +138,9 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 	createData := request.Data.([]interface{})[0].(map[string]interface{})
 	if len(createData) == 0 {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: structure.INVALID_STRUCTURE,
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   structure.INVALID_STRUCTURE,
 		})
 
 		return
@@ -151,7 +154,7 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 		delete(createData, "$omit")
 	}
 
-	filter, err := handleWSFilter(request.Filter)
+	filter, err := handleWSFilter(request.Filter, request.RequestID)
 	if err.Error {
 		ws.WriteJSON(err)
 		return
@@ -177,8 +180,9 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 			err := os.MkdirAll(fmt.Sprintf("./data/%s/%s", request.Database, request.Collection), os.ModePerm)
 			if err != nil {
 				ws.WriteJSON(structure.WebsocketAnswer{
-					Error:   true,
-					Message: err.Error(),
+					Error:     true,
+					RequestID: request.RequestID,
+					Message:   err.Error(),
 				})
 				return
 			}
@@ -187,8 +191,9 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 		file, err := os.Create(fmt.Sprintf("./data/%s/%s/%s.db", request.Database, request.Collection, id))
 		if err != nil {
 			ws.WriteJSON(structure.WebsocketAnswer{
-				Error:   true,
-				Message: err.Error(),
+				Error:     true,
+				RequestID: request.RequestID,
+				Message:   err.Error(),
 			})
 			return
 		}
@@ -196,16 +201,18 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 		encoded, err := json.Marshal(document)
 		if err != nil {
 			ws.WriteJSON(structure.WebsocketAnswer{
-				Error:   true,
-				Message: err.Error(),
+				Error:     true,
+				RequestID: request.RequestID,
+				Message:   err.Error(),
 			})
 			return
 		}
 
 		if _, err := file.WriteString(string(encoded)); err != nil {
 			ws.WriteJSON(structure.WebsocketAnswer{
-				Error:   true,
-				Message: err.Error(),
+				Error:     true,
+				RequestID: request.RequestID,
+				Message:   err.Error(),
 			})
 			return
 		}
@@ -218,7 +225,8 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 		result["data"] = document
 
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Data: result,
+			RequestID: request.RequestID,
+			Data:      result,
 		})
 
 		return
@@ -226,6 +234,7 @@ func WSHandleSearchOrCreate(ws *websocket.Conn, request structure.WebsocketReque
 
 	result["data"] = found[0]
 	ws.WriteJSON(structure.WebsocketAnswer{
-		Data: result,
+		RequestID: request.RequestID,
+		Data:      result,
 	})
 }

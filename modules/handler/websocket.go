@@ -43,26 +43,39 @@ func HandleWS() {
 					Message: err.Error(),
 				})
 			} else {
-				if len(request.Database) == 0 {
+				if request.RequestID < 1 {
 					ws.WriteJSON(structure.WebsocketAnswer{
 						Error:   true,
-						Message: structure.INVALID_DATABASE,
+						Message: structure.INVALID_REQUEST_ID,
 					})
+					return
+				}
+
+				if len(request.Database) == 0 {
+					ws.WriteJSON(structure.WebsocketAnswer{
+						Error:     true,
+						RequestID: request.RequestID,
+						Message:   structure.INVALID_DATABASE,
+					})
+					return
 				}
 
 				if len(request.Collection) == 0 {
 					ws.WriteJSON(structure.WebsocketAnswer{
-						Error:   true,
-						Message: structure.INVALID_COLLECTION,
+						Error:     true,
+						RequestID: request.RequestID,
+						Message:   structure.INVALID_COLLECTION,
 					})
+					return
 				}
 
 				switch request.Type {
 				case "create":
 					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
 						ws.WriteJSON(structure.WebsocketAnswer{
-							Error:   true,
-							Message: structure.METHOD_NOT_ALLOWED,
+							Error:     true,
+							RequestID: request.RequestID,
+							Message:   structure.METHOD_NOT_ALLOWED,
 						})
 						return
 					}
@@ -75,8 +88,9 @@ func HandleWS() {
 				case "update":
 					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
 						ws.WriteJSON(structure.WebsocketAnswer{
-							Error:   true,
-							Message: structure.METHOD_NOT_ALLOWED,
+							Error:     true,
+							RequestID: request.RequestID,
+							Message:   structure.METHOD_NOT_ALLOWED,
 						})
 						return
 					}
@@ -86,8 +100,9 @@ func HandleWS() {
 				case "instantUpdate":
 					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
 						ws.WriteJSON(structure.WebsocketAnswer{
-							Error:   true,
-							Message: structure.METHOD_NOT_ALLOWED,
+							Error:     true,
+							RequestID: request.RequestID,
+							Message:   structure.METHOD_NOT_ALLOWED,
 						})
 						return
 					}
@@ -100,8 +115,9 @@ func HandleWS() {
 				case "searchOrCreate":
 					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
 						ws.WriteJSON(structure.WebsocketAnswer{
-							Error:   true,
-							Message: structure.METHOD_NOT_ALLOWED,
+							Error:     true,
+							RequestID: request.RequestID,
+							Message:   structure.METHOD_NOT_ALLOWED,
 						})
 						return
 					}
@@ -110,8 +126,9 @@ func HandleWS() {
 
 				default:
 					ws.WriteJSON(structure.WebsocketAnswer{
-						Error:   true,
-						Message: "Invalid request type",
+						Error:     true,
+						RequestID: request.RequestID,
+						Message:   "Invalid request type",
 					})
 				}
 			}

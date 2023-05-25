@@ -4,5 +4,6 @@ type WebsocketAnswer struct {
 	Error   bool   `json:"error"`
 	Message string `json:"message"`
 
-	Data interface{} `json:"data"`
+	RequestID int         `json:"requestID"`
+	Data      interface{} `json:"data"`
 }

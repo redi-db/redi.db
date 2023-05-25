@@ -123,8 +123,9 @@ func handleInstantUpdate() {
 func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketRequest) {
 	if request.Data == nil || len(request.Data.([]interface{})) == 0 {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: structure.EMPTY_DATA,
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   structure.EMPTY_DATA,
 		})
 
 		return
@@ -132,16 +133,18 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 
 	if request.Data.([]interface{})[0] == nil || request.Data.([]interface{})[0].(map[string]interface{}) == nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: structure.NOTHING,
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   structure.NOTHING,
 		})
 		return
 	}
 
 	if request.Data.([]interface{})[0] == nil || reflect.TypeOf(request.Data.([]interface{})[0]).String() != "map[string]interface {}" {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: structure.INVALID_STRUCTURE,
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   structure.INVALID_STRUCTURE,
 		})
 
 		return
@@ -149,8 +152,9 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 
 	if request.Data.([]interface{})[0].(map[string]interface{})["_id"] != nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: fmt.Sprintf(structure.LOCK, "_id"),
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   fmt.Sprintf(structure.LOCK, "_id"),
 		})
 
 		return
@@ -158,8 +162,9 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 
 	if request.Data.([]interface{})[0].(map[string]interface{})["$max"] != nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: fmt.Sprintf(structure.LOCK, "$max"),
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   fmt.Sprintf(structure.LOCK, "$max"),
 		})
 
 		return
@@ -167,8 +172,9 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 
 	if request.Data.([]interface{})[0].(map[string]interface{})["$order"] != nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: fmt.Sprintf(structure.LOCK, "$order"),
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   fmt.Sprintf(structure.LOCK, "$order"),
 		})
 
 		return
@@ -176,8 +182,9 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 
 	if request.Data.([]interface{})[0].(map[string]interface{})["$only"] != nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: fmt.Sprintf(structure.LOCK, "$only"),
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   fmt.Sprintf(structure.LOCK, "$only"),
 		})
 
 		return
@@ -185,8 +192,9 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 
 	if request.Data.([]interface{})[0].(map[string]interface{})["$omit"] != nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: fmt.Sprintf(structure.LOCK, "$omit"),
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   fmt.Sprintf(structure.LOCK, "$omit"),
 		})
 
 		return
@@ -194,8 +202,9 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 
 	if request.Data.([]interface{})[0].(map[string]interface{})["$or"] != nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: fmt.Sprintf(structure.LOCK, "$or"),
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   fmt.Sprintf(structure.LOCK, "$or"),
 		})
 
 		return
@@ -203,14 +212,15 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 
 	if request.Data.([]interface{})[0].(map[string]interface{})["$or"] != nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:   true,
-			Message: fmt.Sprintf(structure.LOCK, "$or"),
+			Error:     true,
+			RequestID: request.RequestID,
+			Message:   fmt.Sprintf(structure.LOCK, "$or"),
 		})
 
 		return
 	}
 
-	filter, err := handleWSFilter(request.Filter)
+	filter, err := handleWSFilter(request.Filter, request.RequestID)
 	if err.Error {
 		ws.WriteJSON(err)
 		return
@@ -219,7 +229,8 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 	found := memcache.Get(request.Database, request.Collection, filter, 0)
 	if found == nil {
 		ws.WriteJSON(structure.WebsocketAnswer{
-			Data: []interface{}{},
+			RequestID: request.RequestID,
+			Data:      []interface{}{},
 		})
 
 		return
@@ -259,6 +270,7 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 
 	memcache.Cache.Unlock()
 	ws.WriteJSON(structure.WebsocketAnswer{
-		Data: updated,
+		RequestID: request.RequestID,
+		Data:      updated,
 	})
 }
