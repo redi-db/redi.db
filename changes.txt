@@ -1,2 +1,3 @@
-Corrections:
-    + Each request requires requestID, for responses to work correctly
+Changes:
+    + Filter $gt now handles multiple queries instead of one
+    + Filter $lt now handles multiple requests instead of one

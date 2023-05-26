@@ -20,7 +20,7 @@ func Get(database string, collection string, filter map[string]interface{}, max 
 	if len(result) == 0 && len(or) > 0 {
 		for _, filterOr := range or {
 			if filterOr != nil && filterOr.(map[string]interface{})["$or"] != nil {
-				delete(filterOr.((map[string]interface{})), "$or")
+				delete(filterOr.(map[string]interface{}), "$or")
 			}
 
 			result = Get(database, collection, filterOr.(map[string]interface{}), max)
@@ -42,8 +42,8 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	var only []interface{}
 	var omit []interface{}
 
-	var greatThen map[string]interface{}
-	var lessThan map[string]interface{}
+	var greatThen []interface{}
+	var lessThan []interface{}
 
 	if filter != nil {
 		if filter["$max"] != nil {
@@ -66,12 +66,12 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 		}
 
 		if filter["$gt"] != nil {
-			greatThen = filter["$gt"].(map[string]interface{})
+			greatThen = filter["$gt"].([]interface{})
 			delete(filter, "$gt")
 		}
 
 		if filter["$lt"] != nil {
-			lessThan = filter["$lt"].(map[string]interface{})
+			lessThan = filter["$lt"].([]interface{})
 			delete(filter, "$lt")
 		}
 	}
@@ -103,8 +103,16 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	if len(greatThen) > 0 {
 		for i := len(result) - 1; i >= 0; i-- {
 			document := result[i]
-			value, contains := getValue(document, greatThen["by"])
-			if contains && reflect.TypeOf(value).String() == "float64" && value.(float64) < greatThen["value"].(float64) {
+			allConditionsMatch := true
+			for _, condition := range greatThen {
+				conditionMap := condition.(map[string]interface{})
+				value, contains := getValue(document, conditionMap["by"].(string))
+				if !contains || reflect.TypeOf(value).String() != "float64" || value.(float64) < conditionMap["value"].(float64) {
+					allConditionsMatch = false
+					break
+				}
+			}
+			if !allConditionsMatch {
 				result = RemoveIndex(result, i)
 			}
 		}
@@ -113,8 +121,16 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	if len(lessThan) > 0 {
 		for i := len(result) - 1; i >= 0; i-- {
 			document := result[i]
-			value, contains := getValue(document, lessThan["by"])
-			if contains && reflect.TypeOf(value).String() == "float64" && value.(float64) > lessThan["value"].(float64) {
+			allConditionsMatch := true
+			for _, condition := range lessThan {
+				conditionMap := condition.(map[string]interface{})
+				value, contains := getValue(document, conditionMap["by"].(string))
+				if !contains || reflect.TypeOf(value).String() != "float64" || value.(float64) > conditionMap["value"].(float64) {
+					allConditionsMatch = false
+					break
+				}
+			}
+			if !allConditionsMatch {
 				result = RemoveIndex(result, i)
 			}
 		}
@@ -201,7 +217,7 @@ func matchesFilter(data map[string]interface{}, filter map[string]interface{}) b
 }
 
 func sortData(data []map[string]interface{}, sortType string, sortBy interface{}) []map[string]interface{} {
-	sortData := []map[string]interface{}{}
+	var sortData []map[string]interface{}
 	for _, document := range data {
 		if _, ok := getValue(document, sortBy); ok {
 			sortData = append(sortData, document)
