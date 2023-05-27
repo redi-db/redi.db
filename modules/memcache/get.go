@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/mitchellh/copystructure"
 )
@@ -38,6 +39,7 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 
 	var result []map[string]interface{}
 	var sort map[string]interface{}
+	var text []interface{}
 
 	var only []interface{}
 	var omit []interface{}
@@ -48,6 +50,11 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	if filter != nil {
 		if filter["$max"] != nil {
 			delete(filter, "$max")
+		}
+
+		if filter["$text"] != nil {
+			text = filter["$text"].([]interface{})
+			delete(filter, "$text")
 		}
 
 		if filter != nil && filter["$order"] != nil {
@@ -97,6 +104,26 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 
 		if matchesFilter(document, filter) {
 			result = append(result, document)
+		}
+	}
+
+	if len(text) > 0 {
+		for i := len(result) - 1; i >= 0; i-- {
+			document := result[i]
+			allConditionsMatch := true
+			for _, filter := range text {
+				filterMap := filter.(map[string]interface{})
+				field := filterMap["by"].(string)
+				value := filterMap["value"].(string)
+				fieldValue, contains := getValue(document, field)
+				if !contains || reflect.TypeOf(fieldValue).String() != "string" || !strings.Contains(fieldValue.(string), value) {
+					allConditionsMatch = false
+					break
+				}
+			}
+			if !allConditionsMatch {
+				result = RemoveIndex(result, i)
+			}
 		}
 	}
 

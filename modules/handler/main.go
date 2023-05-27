@@ -228,6 +228,37 @@ func handleHttpFilter(filter map[string]interface{}) (map[string]interface{}, fi
 		}
 	}
 
+	if filter["$text"] != nil {
+		if reflect.TypeOf(filter["$text"]).String() != "[]interface {}" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.MUST_BY, "$text", "array"),
+			}
+		}
+
+		for i, tValue := range filter["$text"].([]interface{}) {
+			if tValue == nil || reflect.TypeOf(tValue).String() != "map[string]interface {}" {
+				return nil, fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object"),
+				}
+			}
+
+			t := tValue.(map[string]interface{})
+			if t["by"] == nil || reflect.TypeOf(t["by"]).String() != "string" {
+				return nil, fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object with \"by\" (string)"),
+				}
+			} else if t["value"] == nil || reflect.TypeOf(t["value"]).String() != "string" {
+				return nil, fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object with \"value\" (string)"),
+				}
+			}
+		}
+	}
+
 	if filter["$gt"] != nil {
 		if reflect.TypeOf(filter["$gt"]).String() != "[]interface {}" {
 			return nil, fiber.Map{
@@ -253,7 +284,7 @@ func handleHttpFilter(filter map[string]interface{}) (map[string]interface{}, fi
 			} else if gt["value"] == nil || reflect.TypeOf(gt["value"]).String() != "float64" {
 				return nil, fiber.Map{
 					"success": false,
-					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$gt with index %d", i), "object with \"value\" with (number)"),
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$gt with index %d", i), "object with \"value\" (number)"),
 				}
 			}
 		}
@@ -284,7 +315,7 @@ func handleHttpFilter(filter map[string]interface{}) (map[string]interface{}, fi
 			} else if lt["value"] == nil || reflect.TypeOf(lt["value"]).String() != "float64" {
 				return nil, fiber.Map{
 					"success": false,
-					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$lt with index %d", i), "object with \"value\" with (number)"),
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$lt with index %d", i), "object with \"value\" (number)"),
 				}
 			}
 		}
@@ -388,6 +419,41 @@ func handleWSFilter(filter map[string]interface{}, requestID int) (map[string]in
 		}
 	}
 
+	if filter["$text"] != nil {
+		if reflect.TypeOf(filter["$text"]).String() != "[]interface {}" {
+			return nil, structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$text", "array"),
+			}
+		}
+
+		for i, tValue := range filter["$text"].([]interface{}) {
+			if tValue == nil || reflect.TypeOf(tValue).String() != "map[string]interface {}" {
+				return nil, structure.WebsocketAnswer{
+					Error:     true,
+					RequestID: requestID,
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object"),
+				}
+			}
+
+			t := tValue.(map[string]interface{})
+			if t["by"] == nil || reflect.TypeOf(t["by"]).String() != "string" {
+				return nil, structure.WebsocketAnswer{
+					Error:     true,
+					RequestID: requestID,
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object with \"by\" (string)"),
+				}
+			} else if t["value"] == nil || reflect.TypeOf(t["value"]).String() != "string" {
+				return nil, structure.WebsocketAnswer{
+					Error:     true,
+					RequestID: requestID,
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object with \"value\" (string)"),
+				}
+			}
+		}
+	}
+
 	if filter["$gt"] != nil {
 		if reflect.TypeOf(filter["$gt"]).String() != "[]interface {}" {
 			return nil, structure.WebsocketAnswer{
@@ -417,7 +483,7 @@ func handleWSFilter(filter map[string]interface{}, requestID int) (map[string]in
 				return nil, structure.WebsocketAnswer{
 					Error:     true,
 					RequestID: requestID,
-					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$gt with index %d", i), "object with \"value\" with (number)"),
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$gt with index %d", i), "object with \"value\" (number)"),
 				}
 			}
 		}
@@ -452,7 +518,7 @@ func handleWSFilter(filter map[string]interface{}, requestID int) (map[string]in
 				return nil, structure.WebsocketAnswer{
 					Error:     true,
 					RequestID: requestID,
-					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$lt with index %d", i), "object with \"value\" with (number)"),
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$lt with index %d", i), "object with \"value\" (number)"),
 				}
 			}
 		}
