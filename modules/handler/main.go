@@ -295,7 +295,7 @@ func handleHttpFilter(filter map[string]interface{}) (map[string]interface{}, fi
 	}
 
 	if filter["$lt"] != nil {
-		if reflect.TypeOf(filter["$gt"]).String() != "[]interface {}" {
+		if reflect.TypeOf(filter["$lt"]).String() != "[]interface {}" {
 			return nil, fiber.Map{
 				"success": false,
 				"message": fmt.Sprintf(structure.MUST_BY, "$lt", "array"),

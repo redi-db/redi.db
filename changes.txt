@@ -1,6 +1,2 @@
-Improvements:
-    + Improved code structuring
-
 Fixes:
-    + Some methods could handle new parameters incorrectly (for example, "create" could take "$text")
-    + In configuration file option "garbage.interval" had wrong value
+    + If the filter was "$lt" without "$gt" the server would crash
