@@ -40,6 +40,7 @@ func handleCreate() {
 
 		path.Create()
 		var created []map[string]interface{}
+	MainLoop:
 		for _, create := range data.Create {
 			if len(create) == 0 {
 				created = append(created, map[string]interface{}{
@@ -50,40 +51,15 @@ func handleCreate() {
 				continue
 			}
 
-			if create["_id"] != nil {
-				created = append(created, map[string]interface{}{
-					"created": false,
-					"skipped": true,
-					"reason":  fmt.Sprintf(structure.LOCK, "_id"),
-				})
-				continue
-			}
-
-			if create["$order"] != nil {
-				created = append(created, map[string]interface{}{
-					"created": false,
-					"skipped": true,
-					"reason":  fmt.Sprintf(structure.LOCK, "$order"),
-				})
-				continue
-			}
-
-			if create["$max"] != nil {
-				created = append(created, map[string]interface{}{
-					"created": false,
-					"skipped": true,
-					"reason":  fmt.Sprintf(structure.LOCK, "$max"),
-				})
-				continue
-			}
-
-			if create["$or"] != nil {
-				created = append(created, map[string]interface{}{
-					"created": false,
-					"skipped": true,
-					"reason":  fmt.Sprintf(structure.LOCK, "$order"),
-				})
-				continue
+			for _, lockkey := range LockedFilters {
+				if create[lockkey] != nil {
+					created = append(created, map[string]interface{}{
+						"created": false,
+						"skipped": true,
+						"reason":  fmt.Sprintf(structure.LOCK, lockkey),
+					})
+					continue MainLoop
+				}
 			}
 
 			id := generateID(LengthOfID)
@@ -166,6 +142,8 @@ func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 
 	path.Create()
 	var created []map[string]interface{}
+
+MainLoop:
 	for _, createData := range request.Data.([]interface{}) {
 		if reflect.TypeOf(createData).String() != "map[string]interface {}" {
 			created = append(created, map[string]interface{}{
@@ -187,40 +165,15 @@ func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
 			continue
 		}
 
-		if create["_id"] != nil {
-			created = append(created, map[string]interface{}{
-				"created": false,
-				"skipped": true,
-				"reason":  fmt.Sprintf(structure.LOCK, "_id"),
-			})
-			continue
-		}
-
-		if create["$order"] != nil {
-			created = append(created, map[string]interface{}{
-				"created": false,
-				"skipped": true,
-				"reason":  fmt.Sprintf(structure.LOCK, "$order"),
-			})
-			continue
-		}
-
-		if create["$max"] != nil {
-			created = append(created, map[string]interface{}{
-				"created": false,
-				"skipped": true,
-				"reason":  fmt.Sprintf(structure.LOCK, "$max"),
-			})
-			continue
-		}
-
-		if create["$or"] != nil {
-			created = append(created, map[string]interface{}{
-				"created": false,
-				"skipped": true,
-				"reason":  fmt.Sprintf(structure.LOCK, "$or"),
-			})
-			continue
+		for _, lockkey := range LockedFilters {
+			if create[lockkey] != nil {
+				created = append(created, map[string]interface{}{
+					"created": false,
+					"skipped": true,
+					"reason":  fmt.Sprintf(structure.LOCK, lockkey),
+				})
+				continue MainLoop
+			}
 		}
 
 		id := generateID(LengthOfID)

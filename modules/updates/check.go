@@ -7,7 +7,7 @@ import (
 )
 
 func Check() (string, bool, error) {
-	resp, err := http.Get(VERSION_PATH)
+	resp, err := http.Get(VersionPath)
 	if err != nil {
 		return "", false, err
 	}

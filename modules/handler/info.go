@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"RediDB/modules/config"
 	"RediDB/modules/memcache"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,7 +11,7 @@ func HandleInfo() {
 		login := ctx.FormValue("login")
 		password := ctx.FormValue("password")
 
-		if login != config.Get().Database.Login || password != config.Get().Database.Password {
+		if login != _config.Database.Login || password != _config.Database.Password {
 			return ctx.JSON(fiber.Map{
 				"success": false,
 				"message": "Authorization failed",

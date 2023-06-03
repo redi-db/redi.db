@@ -9,7 +9,7 @@ settings:
 
 garbage:
     enabled: false # Enable automatic garbage collection. When enabled, the server will periodically clean up unused resources to optimize memory usage.
-    interval: 0 # The interval in minutes between automatic garbage collection invocations. The default value is set to 5 minutes.
+    interval: 5 # The interval in minutes between automatic garbage collection invocations. The default value is set to 5 minutes.
 
 # Authentication parameters
 auth:

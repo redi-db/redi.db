@@ -31,10 +31,11 @@ func handleDelete() {
 			data.Filter = make(map[string]interface{})
 		}
 
-		delete(data.Filter, "$order")
-		delete(data.Filter, "$only")
-		delete(data.Filter, "$omit")
-		delete(data.Filter, "$max")
+		for _, ignoredKey := range IgnoreFilters {
+			if data.Filter[ignoredKey] != nil {
+				delete(data.Filter, ignoredKey)
+			}
+		}
 
 		filter, err := handleHttpFilter(data.Filter)
 		if len(err) > 0 {
@@ -118,10 +119,11 @@ func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
 		request.Filter = make(map[string]interface{})
 	}
 
-	delete(request.Filter, "$order")
-	delete(request.Filter, "$only")
-	delete(request.Filter, "$omit")
-	delete(request.Filter, "$max")
+	for _, ignoredKey := range IgnoreFilters {
+		if request.Filter[ignoredKey] != nil {
+			delete(request.Filter, ignoredKey)
+		}
+	}
 
 	filter, err := handleWSFilter(request.Filter, request.RequestID)
 	if err.Error {

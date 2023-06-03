@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"RediDB/modules/config"
 	"RediDB/modules/structure"
 	"reflect"
 
@@ -11,10 +10,9 @@ import (
 )
 
 func HandleWS() {
-	config := config.Get()
 	App.Use("/ws", func(c *fiber.Ctx) error {
 		if websocket.IsWebSocketUpgrade(c) {
-			if c.Query("login") != config.Database.Login || c.Query("password") != config.Database.Password {
+			if c.Query("login") != _config.Database.Login || c.Query("password") != _config.Database.Password {
 				return fiber.ErrUnauthorized
 			}
 

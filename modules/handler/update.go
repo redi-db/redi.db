@@ -38,18 +38,21 @@ func handleUpdate() {
 			})
 		}
 
-		if data.Data.Update["_id"] != nil {
-			return ctx.JSON(fiber.Map{
-				"success": false,
-				"message": fmt.Sprintf(structure.LOCK, "_id"),
-			})
+		for _, ignoredKey := range IgnoreFilters {
+			if data.Data.Update[ignoredKey] != nil {
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.LOCK, ignoredKey),
+				})
+			}
 		}
 
 		if data.Data.Filter != nil {
-			delete(data.Data.Filter, "$order")
-			delete(data.Data.Filter, "$only")
-			delete(data.Data.Filter, "$omit")
-			delete(data.Data.Filter, "$max")
+			for _, ignoredKey := range IgnoreFilters {
+				if data.Data.Filter[ignoredKey] != nil {
+					delete(data.Data.Filter, ignoredKey)
+				}
+			}
 		}
 
 		filter, err := handleHttpFilter(data.Data.Filter)
@@ -119,66 +122,29 @@ func WSHandleUpdate(ws *websocket.Conn, request structure.WebsocketRequest) {
 		return
 	}
 
-	if request.Data.([]interface{})[0].(map[string]interface{})["_id"] != nil {
-		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:     true,
-			RequestID: request.RequestID,
-			Message:   fmt.Sprintf(structure.LOCK, "_id"),
-		})
+	for _, lockkey := range LockedFilters {
+		if request.Data.([]interface{})[0].(map[string]interface{})[lockkey] != nil {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: request.RequestID,
+				Message:   fmt.Sprintf(structure.LOCK, lockkey),
+			})
 
-		return
+			return
+		}
 	}
 
 	if request.Filter != nil {
-		delete(request.Filter, "$order")
-		delete(request.Filter, "$only")
-		delete(request.Filter, "$omit")
-		delete(request.Filter, "$max")
+		for _, ignoredKey := range IgnoreFilters {
+			if request.Filter[ignoredKey] != nil {
+				delete(request.Filter, ignoredKey)
+			}
+		}
 	}
 
 	filter, err := handleWSFilter(request.Filter, request.RequestID)
 	if err.Error {
 		ws.WriteJSON(err)
-		return
-	}
-
-	if request.Data.([]interface{})[0].(map[string]interface{})["$max"] != nil {
-		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:     true,
-			RequestID: request.RequestID,
-			Message:   fmt.Sprintf(structure.LOCK, "$max"),
-		})
-
-		return
-	}
-
-	if request.Data.([]interface{})[0].(map[string]interface{})["$order"] != nil {
-		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:     true,
-			RequestID: request.RequestID,
-			Message:   fmt.Sprintf(structure.LOCK, "$order"),
-		})
-
-		return
-	}
-
-	if request.Data.([]interface{})[0].(map[string]interface{})["$only"] != nil {
-		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:     true,
-			RequestID: request.RequestID,
-			Message:   fmt.Sprintf(structure.LOCK, "$only"),
-		})
-
-		return
-	}
-
-	if request.Data.([]interface{})[0].(map[string]interface{})["$omit"] != nil {
-		ws.WriteJSON(structure.WebsocketAnswer{
-			Error:     true,
-			RequestID: request.RequestID,
-			Message:   fmt.Sprintf(structure.LOCK, "$omit"),
-		})
-
 		return
 	}
 

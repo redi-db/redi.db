@@ -38,7 +38,7 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	path.Create()
 
 	var result []map[string]interface{}
-	var sort map[string]interface{}
+	var _sort map[string]interface{}
 	var text []interface{}
 
 	var only []interface{}
@@ -58,7 +58,7 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 		}
 
 		if filter != nil && filter["$order"] != nil {
-			sort = filter["$order"].(map[string]interface{})
+			_sort = filter["$order"].(map[string]interface{})
 			delete(filter, "$order")
 		}
 
@@ -163,8 +163,8 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 		}
 	}
 
-	if len(sort) > 0 {
-		result = sortData(result, sort["type"].(string), sort["by"])
+	if len(_sort) > 0 {
+		result = sortData(result, _sort["type"].(string), _sort["by"])
 	}
 
 	if len(only) > 0 || len(omit) > 0 {
