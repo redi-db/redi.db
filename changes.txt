@@ -1,2 +1,2 @@
-Fixes:
-    + If the filter was "$lt" without "$gt" the server would crash
+Additions:
+    + Filter "$ne" - search documents NOT equal to the value

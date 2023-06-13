@@ -39,6 +39,8 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 
 	var result []map[string]interface{}
 	var _sort map[string]interface{}
+
+	var ne []interface{}
 	var text []interface{}
 
 	var only []interface{}
@@ -50,6 +52,11 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	if filter != nil {
 		if filter["$max"] != nil {
 			delete(filter, "$max")
+		}
+
+		if filter["$ne"] != nil {
+			ne = filter["$ne"].([]interface{})
+			delete(filter, "$ne")
 		}
 
 		if filter["$text"] != nil {
@@ -104,6 +111,28 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 
 		if matchesFilter(document, filter) {
 			result = append(result, document)
+		}
+	}
+
+	if len(ne) > 0 {
+		for i := len(result) - 1; i >= 0; i-- {
+			document := result[i]
+			allConditionsMatch := true
+			for _, condition := range ne {
+				conditionMap := condition.(map[string]interface{})
+				field := conditionMap["by"].(string)
+				value := conditionMap["value"]
+
+				fieldValue, contains := getValue(document, field)
+				if contains && fieldValue == value {
+					allConditionsMatch = false
+					break
+				}
+			}
+
+			if !allConditionsMatch {
+				result = RemoveIndex(result, i)
+			}
 		}
 	}
 

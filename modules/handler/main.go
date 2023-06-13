@@ -263,6 +263,32 @@ func handleHttpFilter(filter map[string]interface{}) (map[string]interface{}, fi
 		}
 	}
 
+	if filter["$ne"] != nil {
+		if reflect.TypeOf(filter["$ne"]).String() != "[]interface {}" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.MUST_BY, "$ne", "array"),
+			}
+		}
+
+		for i, neValue := range filter["$ne"].([]interface{}) {
+			if neValue == nil || reflect.TypeOf(neValue).String() != "map[string]interface {}" {
+				return nil, fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$ne with index %d", i), "object"),
+				}
+			}
+
+			ne := neValue.(map[string]interface{})
+			if ne["by"] == nil || reflect.TypeOf(ne["by"]).String() != "string" {
+				return nil, fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$ne with index %d", i), "object with \"by\" (string)"),
+				}
+			}
+		}
+	}
+
 	if filter["$gt"] != nil {
 		if reflect.TypeOf(filter["$gt"]).String() != "[]interface {}" {
 			return nil, fiber.Map{
@@ -453,6 +479,35 @@ func handleWSFilter(filter map[string]interface{}, requestID int) (map[string]in
 					Error:     true,
 					RequestID: requestID,
 					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object with \"value\" (string)"),
+				}
+			}
+		}
+	}
+
+	if filter["$ne"] != nil {
+		if reflect.TypeOf(filter["$ne"]).String() != "[]interface {}" {
+			return nil, structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$ne", "array"),
+			}
+		}
+
+		for i, neValue := range filter["$ne"].([]interface{}) {
+			if neValue == nil || reflect.TypeOf(neValue).String() != "map[string]interface {}" {
+				return nil, structure.WebsocketAnswer{
+					Error:     true,
+					RequestID: requestID,
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$ne with index %d", i), "object"),
+				}
+			}
+
+			ne := neValue.(map[string]interface{})
+			if ne["by"] == nil || reflect.TypeOf(ne["by"]).String() != "string" {
+				return nil, structure.WebsocketAnswer{
+					Error:     true,
+					RequestID: requestID,
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$ne with index %d", i), "object with \"by\" (string)"),
 				}
 			}
 		}
