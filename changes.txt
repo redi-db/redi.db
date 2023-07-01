@@ -1,2 +1,2 @@
-Additions:
-    + Filter "$ne" - search documents NOT equal to the value
+Corrections:
+    + If the value was nullable and the query included that key with "$gt", "$lt" & "$text" filter - server crashed

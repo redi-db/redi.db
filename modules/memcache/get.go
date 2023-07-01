@@ -145,9 +145,11 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 				field := filterMap["by"].(string)
 				value := filterMap["value"].(string)
 				fieldValue, contains := getValue(document, field)
-				if !contains || reflect.TypeOf(fieldValue).String() != "string" || !strings.Contains(fieldValue.(string), value) {
-					allConditionsMatch = false
-					break
+				if fieldValue != nil {
+					if !contains || reflect.TypeOf(fieldValue).String() != "string" || !strings.Contains(fieldValue.(string), value) {
+						allConditionsMatch = false
+						break
+					}
 				}
 			}
 			if !allConditionsMatch {
@@ -163,9 +165,11 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 			for _, condition := range greatThen {
 				conditionMap := condition.(map[string]interface{})
 				value, contains := getValue(document, conditionMap["by"].(string))
-				if !contains || reflect.TypeOf(value).String() != "float64" || value.(float64) < conditionMap["value"].(float64) {
-					allConditionsMatch = false
-					break
+				if value != nil {
+					if !contains || reflect.TypeOf(value).String() != "float64" || value.(float64) < conditionMap["value"].(float64) {
+						allConditionsMatch = false
+						break
+					}
 				}
 			}
 			if !allConditionsMatch {
@@ -181,9 +185,11 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 			for _, condition := range lessThan {
 				conditionMap := condition.(map[string]interface{})
 				value, contains := getValue(document, conditionMap["by"].(string))
-				if !contains || reflect.TypeOf(value).String() != "float64" || value.(float64) > conditionMap["value"].(float64) {
-					allConditionsMatch = false
-					break
+				if value != nil {
+					if !contains || reflect.TypeOf(value).String() != "float64" || value.(float64) > conditionMap["value"].(float64) {
+						allConditionsMatch = false
+						break
+					}
 				}
 			}
 			if !allConditionsMatch {
