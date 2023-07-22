@@ -17,7 +17,7 @@ import (
 
 var LengthOfID = 18
 var IgnoreFilters = []string{"$only", "$order", "$max", "$omit"}
-var LockedFilters = []string{"_id", "$or", "$order", "$gt", "$lt", "$max", "$omit", "$only", "$text"}
+var LockedFilters = []string{"_id", "$or", "$order", "$gt", "$lt", "$max", "$omit", "$only", "$regex", "$and"}
 
 var App = fiber.New(fiber.Config{
 	DisableStartupMessage: true,
@@ -229,35 +229,70 @@ func handleHttpFilter(filter map[string]interface{}) (map[string]interface{}, fi
 					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
 				}
 			}
+
+			ok, msg := handleHttpFilter(or.(map[string]interface{}))
+			if ok == nil {
+				return nil, msg
+			}
 		}
 	}
 
-	if filter["$text"] != nil {
-		if reflect.TypeOf(filter["$text"]).String() != "[]interface {}" {
+	if filter["$and"] != nil {
+		if reflect.TypeOf(filter["$and"]).String() != "[]interface {}" {
 			return nil, fiber.Map{
 				"success": false,
-				"message": fmt.Sprintf(structure.MUST_BY, "$text", "array"),
+				"message": fmt.Sprintf(structure.MUST_BY, "$and", "array"),
 			}
 		}
 
-		for i, tValue := range filter["$text"].([]interface{}) {
-			if tValue == nil || reflect.TypeOf(tValue).String() != "map[string]interface {}" {
+		if len(filter["$and"].([]interface{})) == 0 {
+			return nil, fiber.Map{
+				"success": false,
+				"message": structure.EMPTY_DATA,
+			}
+		}
+
+		for i, and := range filter["$and"].([]interface{}) {
+			if and == nil || reflect.TypeOf(and).String() != "map[string]interface {}" {
 				return nil, fiber.Map{
 					"success": false,
-					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object"),
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$and with index %d", i), "object"),
 				}
 			}
 
-			t := tValue.(map[string]interface{})
-			if t["by"] == nil || reflect.TypeOf(t["by"]).String() != "string" {
+			ok, msg := handleHttpFilter(and.(map[string]interface{}))
+			if ok == nil {
+				return nil, msg
+			}
+		}
+	}
+
+	if filter["$regex"] != nil {
+		if reflect.TypeOf(filter["$regex"]).String() != "[]interface {}" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.MUST_BY, "$regex", "array"),
+			}
+		}
+
+		for i, rValue := range filter["$regex"].([]interface{}) {
+			if rValue == nil || reflect.TypeOf(rValue).String() != "map[string]interface {}" {
 				return nil, fiber.Map{
 					"success": false,
-					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object with \"by\" (string)"),
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$regex with index %d", i), "object"),
 				}
-			} else if t["value"] == nil || reflect.TypeOf(t["value"]).String() != "string" {
+			}
+
+			r := rValue.(map[string]interface{})
+			if r["by"] == nil || reflect.TypeOf(r["by"]).String() != "string" {
 				return nil, fiber.Map{
 					"success": false,
-					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object with \"value\" (string)"),
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$regex with index %d", i), "object with \"by\" (string)"),
+				}
+			} else if r["value"] == nil || reflect.TypeOf(r["value"]).String() != "string" || r["value"].(string) == "" {
+				return nil, fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$regex with index %d", i), "object with \"value\" (string)"),
 				}
 			}
 		}
@@ -446,39 +481,77 @@ func handleWSFilter(filter map[string]interface{}, requestID int) (map[string]in
 					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$or with index %d", i), "object"),
 				}
 			}
+
+			ok, msg := handleWSFilter(or.(map[string]interface{}), requestID)
+			if ok == nil {
+				return nil, msg
+			}
 		}
 	}
 
-	if filter["$text"] != nil {
-		if reflect.TypeOf(filter["$text"]).String() != "[]interface {}" {
+	if filter["$and"] != nil {
+		if reflect.TypeOf(filter["$and"]).String() != "[]interface {}" {
 			return nil, structure.WebsocketAnswer{
 				Error:     true,
 				RequestID: requestID,
-				Message:   fmt.Sprintf(structure.MUST_BY, "$text", "array"),
+				Message:   fmt.Sprintf(structure.MUST_BY, "$and", "array"),
 			}
 		}
 
-		for i, tValue := range filter["$text"].([]interface{}) {
-			if tValue == nil || reflect.TypeOf(tValue).String() != "map[string]interface {}" {
+		if len(filter["$and"].([]interface{})) == 0 {
+			return nil, structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: requestID,
+				Message:   structure.EMPTY_DATA,
+			}
+		}
+
+		for i, and := range filter["$and"].([]interface{}) {
+			if and == nil || reflect.TypeOf(and).String() != "map[string]interface {}" {
 				return nil, structure.WebsocketAnswer{
 					Error:     true,
 					RequestID: requestID,
-					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object"),
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$and with index %d", i), "object"),
 				}
 			}
 
-			t := tValue.(map[string]interface{})
-			if t["by"] == nil || reflect.TypeOf(t["by"]).String() != "string" {
+			ok, msg := handleWSFilter(and.(map[string]interface{}), requestID)
+			if ok == nil {
+				return nil, msg
+			}
+		}
+	}
+
+	if filter["$regex"] != nil {
+		if reflect.TypeOf(filter["$regex"]).String() != "[]interface {}" {
+			return nil, structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$regex", "array"),
+			}
+		}
+
+		for i, rValue := range filter["$regex"].([]interface{}) {
+			if rValue == nil || reflect.TypeOf(rValue).String() != "map[string]interface {}" {
 				return nil, structure.WebsocketAnswer{
 					Error:     true,
 					RequestID: requestID,
-					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object with \"by\" (string)"),
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$regex with index %d", i), "object"),
 				}
-			} else if t["value"] == nil || reflect.TypeOf(t["value"]).String() != "string" {
+			}
+
+			r := rValue.(map[string]interface{})
+			if r["by"] == nil || reflect.TypeOf(r["by"]).String() != "string" {
 				return nil, structure.WebsocketAnswer{
 					Error:     true,
 					RequestID: requestID,
-					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$text with index %d", i), "object with \"value\" (string)"),
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$regex with index %d", i), "object with \"by\" (string)"),
+				}
+			} else if r["value"] == nil || reflect.TypeOf(r["value"]).String() != "string" || r["value"].(string) == "" {
+				return nil, structure.WebsocketAnswer{
+					Error:     true,
+					RequestID: requestID,
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$regex with index %d", i), "object with \"value\" (string)"),
 				}
 			}
 		}

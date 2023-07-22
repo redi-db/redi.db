@@ -4,20 +4,47 @@ import (
 	"RediDB/modules/path"
 	"log"
 	"reflect"
+	"regexp"
 	"sort"
-	"strings"
 
 	"github.com/mitchellh/copystructure"
 )
 
 func Get(database string, collection string, filter map[string]interface{}, max int) []map[string]interface{} {
 	var or []interface{}
+	var and []interface{}
+
 	if filter != nil && filter["$or"] != nil {
 		or = filter["$or"].([]interface{})
 		delete(filter, "$or")
 	}
 
+	if filter != nil && filter["$and"] != nil {
+		and = filter["$and"].([]interface{})
+		delete(filter, "$and")
+	}
+
 	result := GetDocuments(database, collection, filter, max)
+	if len(and) > 0 {
+		idMap := make(map[string]bool)
+		for _, document := range result {
+			idMap[document["_id"].(string)] = true
+		}
+
+		for _, andValue := range and {
+			data := GetDocuments(database, collection, andValue.(map[string]interface{}), max)
+
+			for _, document := range data {
+				id := document["_id"].(string)
+
+				if !idMap[id] {
+					idMap[id] = true
+					result = append(result, document)
+				}
+			}
+		}
+	}
+
 	if len(result) == 0 && len(or) > 0 {
 		for _, filterOr := range or {
 			if filterOr != nil && filterOr.(map[string]interface{})["$or"] != nil {
@@ -38,10 +65,11 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	path.Create()
 
 	var result []map[string]interface{}
+
+	var _regex []interface{}
 	var _sort map[string]interface{}
 
 	var ne []interface{}
-	var text []interface{}
 
 	var only []interface{}
 	var omit []interface{}
@@ -54,14 +82,14 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 			delete(filter, "$max")
 		}
 
+		if filter["$regex"] != nil {
+			_regex = filter["$regex"].([]interface{})
+			delete(filter, "$regex")
+		}
+
 		if filter["$ne"] != nil {
 			ne = filter["$ne"].([]interface{})
 			delete(filter, "$ne")
-		}
-
-		if filter["$text"] != nil {
-			text = filter["$text"].([]interface{})
-			delete(filter, "$text")
 		}
 
 		if filter != nil && filter["$order"] != nil {
@@ -136,23 +164,41 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 		}
 	}
 
-	if len(text) > 0 {
+	if len(_regex) > 0 {
 		for i := len(result) - 1; i >= 0; i-- {
 			document := result[i]
 			allConditionsMatch := true
-			for _, filter := range text {
+
+			founded := 0
+			for _, filter := range _regex {
 				filterMap := filter.(map[string]interface{})
 				field := filterMap["by"].(string)
-				value := filterMap["value"].(string)
+				regexValue := filterMap["value"].(string)
+
 				fieldValue, contains := getValue(document, field)
 				if fieldValue != nil {
-					if !contains || reflect.TypeOf(fieldValue).String() != "string" || !strings.Contains(fieldValue.(string), value) {
+					if !contains || reflect.TypeOf(fieldValue).String() != "string" {
 						allConditionsMatch = false
 						break
 					}
+
+					regex, err := regexp.Compile(regexValue)
+					if err != nil {
+						allConditionsMatch = false
+						break
+					}
+
+					match := regex.MatchString(fieldValue.(string))
+					if !match {
+						allConditionsMatch = false
+						break
+					}
+
+					founded++
 				}
 			}
-			if !allConditionsMatch {
+
+			if !allConditionsMatch || founded != len(_regex) {
 				result = RemoveIndex(result, i)
 			}
 		}
@@ -166,7 +212,7 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 				conditionMap := condition.(map[string]interface{})
 				value, contains := getValue(document, conditionMap["by"].(string))
 				if value != nil {
-					if !contains || reflect.TypeOf(value).String() != "float64" || value.(float64) < conditionMap["value"].(float64) {
+					if !contains || reflect.TypeOf(value).String() != "float64" || value.(float64) <= conditionMap["value"].(float64) {
 						allConditionsMatch = false
 						break
 					}
@@ -186,7 +232,7 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 				conditionMap := condition.(map[string]interface{})
 				value, contains := getValue(document, conditionMap["by"].(string))
 				if value != nil {
-					if !contains || reflect.TypeOf(value).String() != "float64" || value.(float64) > conditionMap["value"].(float64) {
+					if !contains || reflect.TypeOf(value).String() != "float64" || value.(float64) >= conditionMap["value"].(float64) {
 						allConditionsMatch = false
 						break
 					}

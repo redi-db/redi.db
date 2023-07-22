@@ -1,2 +1,10 @@
-Corrections:
-    + If the value was nullable and the query included that key with "$gt", "$lt" & "$text" filter - server crashed
+Fixes:
+    + Filter "$lt" & "$gt" did not work correctly (If the document was 1 and the query included 1 - the document was dumped)
+    + Filter "$or" could put the server down if the data for the sub-filter was specified incorrectly
+
+Changes:
+    + The "$text" filter was removed (replaced by $regex)
+
+Additions:
+    + New "$regex" filter
+    + New filter "$and"
