@@ -1,10 +1,9 @@
-Fixes:
-    + Filter "$lt" & "$gt" did not work correctly (If the document was 1 and the query included 1 - the document was dumped)
-    + Filter "$or" could put the server down if the data for the sub-filter was specified incorrectly
+Additions:
+    + Added new parameter "settings.worker_tasks" to the config. Description is present in the new created config
 
 Changes:
-    + The "$text" filter was removed (replaced by $regex)
+    + Collection processing has been accelerated (at startup)
+    + All dependencies have been updated to the latest version (stable for use)
 
-Additions:
-    + New "$regex" filter
-    + New filter "$and"
+Fixes:
+    + If some methods in the "websocket" protocol received NULL it caused the server to crash  

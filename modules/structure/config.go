@@ -9,8 +9,10 @@ type Config struct {
 	} `yaml:"server"`
 
 	Settings struct {
-		MaxThreads   int  `yaml:"max_threads"`
-		MaxData      int  `yaml:"max_data"`
+		MaxThreads int `yaml:"max_threads"`
+		MaxData    int `yaml:"max_data"`
+
+		TasksCount   int  `yaml:"worker_tasks"`
 		CheckUpdates bool `yaml:"check_updates"`
 	} `json:"settings"`
 

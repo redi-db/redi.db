@@ -69,7 +69,7 @@ func HandleWS() {
 
 				switch request.Type {
 				case "create":
-					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
+					if request.Data == nil || reflect.TypeOf(request.Data).String() != "[]interface {}" {
 						ws.WriteJSON(structure.WebsocketAnswer{
 							Error:     true,
 							RequestID: request.RequestID,
@@ -84,7 +84,7 @@ func HandleWS() {
 					WSHandleDelete(ws, request)
 
 				case "update":
-					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
+					if request.Data == nil || reflect.TypeOf(request.Data).String() != "[]interface {}" {
 						ws.WriteJSON(structure.WebsocketAnswer{
 							Error:     true,
 							RequestID: request.RequestID,
@@ -96,7 +96,7 @@ func HandleWS() {
 					WSHandleUpdate(ws, request)
 
 				case "instantUpdate":
-					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
+					if request.Data == nil || reflect.TypeOf(request.Data).String() != "[]interface {}" {
 						ws.WriteJSON(structure.WebsocketAnswer{
 							Error:     true,
 							RequestID: request.RequestID,
@@ -111,7 +111,7 @@ func HandleWS() {
 					WSHandleSearch(ws, request)
 
 				case "searchOrCreate":
-					if reflect.TypeOf(request.Data).String() != "[]interface {}" {
+					if request.Data == nil || reflect.TypeOf(request.Data).String() != "[]interface {}" {
 						ws.WriteJSON(structure.WebsocketAnswer{
 							Error:     true,
 							RequestID: request.RequestID,

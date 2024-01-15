@@ -5,6 +5,8 @@ server:
 settings:
     max_threads: 30000 # The maximum number of request handlers that can be concurrently running. Increasing this value allows the server to handle more requests simultaneously.
     max_data: 10 # The maximum size of data in the request body, in megabytes. If a request contains data exceeding this size, the server may reject the request.
+
+    worker_tasks: 100 # How many tasks a single database will handle. The larger the value, the faster the processing will be, but more resources will be used (also it is possible with too large a value after startup excessive memory waste that will pass after a while).
     check_updates: true # Enable server update checking from the git repository. When enabled, the server will periodically check for updates and prompt for an update if available.
 
 garbage:
