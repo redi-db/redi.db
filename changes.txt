@@ -1,9 +1,5 @@
-Additions:
-    + Evenly returns data when u have a huge amount of documents ("distribute" setting in config)
-
 Changes:
-    + Increased filter handling performance
+    + Now the $max filter will be processed after the other filters are processed (e.g. $gt + $order will work $max correctly)
 
 Fixes:
-    + Corrected some comments in the config for better understanding
-    + instantUpdate now doesn’t overwrite the _id of found documents based on filters (the _id from the first document overwrote the _id of all other documents, because of which during subsequent manipulations with the documents, the database wasn't working properly)
+    + Some filters may have been unstable
