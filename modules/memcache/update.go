@@ -27,6 +27,12 @@ func UpdateDocument(document map[string]interface{}, updateData map[string]inter
 }
 
 func InstantUpdateDocument(document map[string]interface{}, updateData map[string]interface{}) map[string]interface{} {
-	updateData["_id"] = document["_id"]
-	return updateData
+	newDocument := make(map[string]interface{})
+	newDocument["_id"] = document["_id"]
+
+	for key, val := range updateData {
+		newDocument[key] = val
+	}
+
+	return newDocument
 }

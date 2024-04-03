@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"RediDB/modules/distributor"
 	"RediDB/modules/memcache"
 	"RediDB/modules/structure"
 	"fmt"
@@ -18,7 +19,8 @@ func handleInstantUpdate() {
 			Database   string `json:"database"`
 			Collection string `json:"collection"`
 
-			Data struct {
+			DistributorID string `json:"distributorID"`
+			Data          struct {
 				Filter map[string]interface{} `json:"filter"`
 				Update map[string]interface{} `json:"update"`
 			} `json:"data"`
@@ -28,6 +30,22 @@ func handleInstantUpdate() {
 			return ctx.JSON(fiber.Map{
 				"success": false,
 				"message": err.Error(),
+			})
+		}
+
+		if len(data.DistributorID) > 0 {
+			documents, size, err := distributor.GetData(data.DistributorID)
+			if err != nil {
+				ctx.Status(fiber.StatusNotFound)
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": err.Error(),
+				})
+			}
+
+			return ctx.JSON(fiber.Map{
+				"residue": size,
+				"data":    documents,
 			})
 		}
 
@@ -90,11 +108,45 @@ func handleInstantUpdate() {
 		}
 
 		memcache.Cache.Unlock()
+
+		if len(updated) > _config.Distribute.StartFrom {
+			ctx.Status(fiber.StatusPartialContent)
+
+			distributorID := distributor.Set(updated)
+			return ctx.JSON(fiber.Map{
+				"distribute":    true,
+				"distributorID": distributorID,
+			})
+		}
+
 		return ctx.JSON(updated)
 	})
 }
 
 func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketRequest) {
+	distributorID := request.DistributorID
+	if len(distributorID) > 0 {
+		documents, size, err := distributor.GetData(distributorID)
+		if err != nil {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: request.RequestID,
+				Message:   err.Error(),
+			})
+
+			return
+		}
+
+		ws.WriteJSON(structure.WebsocketAnswer{
+			RequestID: request.RequestID,
+
+			Residue: size,
+			Data:    documents,
+		})
+
+		return
+	}
+
 	if request.Data == nil || len(request.Data.([]interface{})) == 0 {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:     true,
@@ -185,6 +237,17 @@ func WSHandleInstantUpdate(ws *websocket.Conn, request structure.WebsocketReques
 	}
 
 	memcache.Cache.Unlock()
+
+	if len(updated) > _config.Distribute.StartFrom {
+		distributorID = distributor.Set(updated)
+		ws.WriteJSON(structure.WebsocketAnswer{
+			RequestID:     request.RequestID,
+			DistributorID: distributorID,
+		})
+
+		return
+	}
+
 	ws.WriteJSON(structure.WebsocketAnswer{
 		RequestID: request.RequestID,
 		Data:      updated,

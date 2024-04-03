@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"RediDB/modules/distributor"
 	"RediDB/modules/memcache"
 	"RediDB/modules/path"
 	"RediDB/modules/structure"
@@ -21,13 +22,30 @@ func handleCreate() {
 			Database   string `json:"database"`
 			Collection string `json:"collection"`
 
-			Create []map[string]interface{} `json:"data"`
+			DistributorID string                   `json:"distributorID"`
+			Create        []map[string]interface{} `json:"data"`
 		}
 
 		if err := ctx.BodyParser(&data); err != nil {
 			return ctx.JSON(fiber.Map{
 				"success": false,
 				"message": err.Error(),
+			})
+		}
+
+		if len(data.DistributorID) > 0 {
+			documents, size, err := distributor.GetData(data.DistributorID)
+			if err != nil {
+				ctx.Status(fiber.StatusNotFound)
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": err.Error(),
+				})
+			}
+
+			return ctx.JSON(fiber.Map{
+				"residue": size,
+				"data":    documents,
 			})
 		}
 
@@ -126,11 +144,44 @@ func handleCreate() {
 			}
 		}
 
+		if len(created) > _config.Distribute.StartFrom {
+			ctx.Status(fiber.StatusPartialContent)
+
+			distributorID := distributor.Set(created)
+			return ctx.JSON(fiber.Map{
+				"distribute":    true,
+				"distributorID": distributorID,
+			})
+		}
+
 		return ctx.JSON(created)
 	})
 }
 
 func WSHandleCreate(ws *websocket.Conn, request structure.WebsocketRequest) {
+	distributorID := request.DistributorID
+	if len(distributorID) > 0 {
+		documents, size, err := distributor.GetData(distributorID)
+		if err != nil {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: request.RequestID,
+				Message:   err.Error(),
+			})
+
+			return
+		}
+
+		ws.WriteJSON(structure.WebsocketAnswer{
+			RequestID: request.RequestID,
+
+			Residue: size,
+			Data:    documents,
+		})
+
+		return
+	}
+
 	if len(request.Data.([]interface{})) == 0 {
 		ws.WriteJSON(structure.WebsocketAnswer{
 			Error:     true,
@@ -238,6 +289,16 @@ MainLoop:
 				"reason":  structure.ID_BANNED,
 			})
 		}
+	}
+
+	if len(created) > _config.Distribute.StartFrom {
+		distributorID = distributor.Set(created)
+		ws.WriteJSON(structure.WebsocketAnswer{
+			RequestID:     request.RequestID,
+			DistributorID: distributorID,
+		})
+
+		return
 	}
 
 	ws.WriteJSON(structure.WebsocketAnswer{

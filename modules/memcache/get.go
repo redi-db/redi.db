@@ -92,12 +92,12 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 			delete(filter, "$ne")
 		}
 
-		if filter != nil && filter["$order"] != nil {
+		if filter["$order"] != nil {
 			_sort = filter["$order"].(map[string]interface{})
 			delete(filter, "$order")
 		}
 
-		if filter != nil && filter["$only"] != nil {
+		if filter["$only"] != nil {
 			only = filter["$only"].([]interface{})
 			delete(filter, "$only")
 		}
@@ -303,22 +303,18 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 
 func matchesFilter(data map[string]interface{}, filter map[string]interface{}) bool {
 	for key, value := range filter {
-		if dataValue, ok := data[key]; ok {
-			if filterMap, ok := value.(map[string]interface{}); ok {
-				if dataMap, ok := dataValue.(map[string]interface{}); ok {
-					if !matchesFilter(dataMap, filterMap) {
-						return false
-					}
-				} else {
+		dataValue, exists := data[key]
+		if !exists || !reflect.DeepEqual(dataValue, value) {
+			return false
+		}
+		if filterMap, ok := value.(map[string]interface{}); ok {
+			if dataMap, ok := dataValue.(map[string]interface{}); ok {
+				if !matchesFilter(dataMap, filterMap) {
 					return false
 				}
 			} else {
-				if dataValue != value {
-					return false
-				}
+				return false
 			}
-		} else {
-			return false
 		}
 	}
 	return true
@@ -353,25 +349,27 @@ func sortData(data []map[string]interface{}, sortType string, sortBy interface{}
 }
 
 func getValue(data map[string]interface{}, key interface{}) (interface{}, bool) {
-	for dataKey, dataValue := range data {
-		if dataKey == key {
-			return dataValue, true
-		}
+	if value, ok := data[key.(string)]; ok {
+		return value, true
+	}
 
-		if dataValue != nil && reflect.TypeOf(dataValue).String() == "map[string]interface {}" {
-			if res, ok := getValue(dataValue.(map[string]interface{}), key); ok {
-				return res, true
+	for k, v := range data {
+		if nestedMap, ok := v.(map[string]interface{}); ok {
+			if value, ok := getValue(nestedMap, key); ok {
+				return value, true
 			}
 		}
-
-		if dataValue != nil && reflect.TypeOf(dataValue).String() == "[]interface {}" {
-			for _, elem := range dataValue.([]interface{}) {
-				if reflect.TypeOf(elem).String() == "map[string]interface {}" {
-					if res, ok := getValue(elem.(map[string]interface{}), key); ok {
-						return res, true
+		if nestedSlice, ok := v.([]interface{}); ok {
+			for _, nestedItem := range nestedSlice {
+				if nestedMap, ok := nestedItem.(map[string]interface{}); ok {
+					if value, ok := getValue(nestedMap, key); ok {
+						return value, true
 					}
 				}
 			}
+		}
+		if k == key {
+			return data[k], true
 		}
 	}
 

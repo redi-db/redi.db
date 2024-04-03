@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"RediDB/modules/distributor"
 	"RediDB/modules/memcache"
 	"RediDB/modules/structure"
 	"fmt"
@@ -17,13 +18,30 @@ func handleDelete() {
 			Database   string `json:"database"`
 			Collection string `json:"collection"`
 
-			Filter map[string]interface{} `json:"filter"`
+			DistributorID string                 `json:"distributorID"`
+			Filter        map[string]interface{} `json:"filter"`
 		}
 
 		if err := ctx.BodyParser(&data); err != nil {
 			return ctx.JSON(fiber.Map{
 				"success": false,
 				"message": err.Error(),
+			})
+		}
+
+		if len(data.DistributorID) > 0 {
+			documents, size, err := distributor.GetData(data.DistributorID)
+			if err != nil {
+				ctx.Status(fiber.StatusNotFound)
+				return ctx.JSON(fiber.Map{
+					"success": false,
+					"message": err.Error(),
+				})
+			}
+
+			return ctx.JSON(fiber.Map{
+				"residue": size,
+				"data":    documents,
 			})
 		}
 
@@ -47,7 +65,7 @@ func handleDelete() {
 			return ctx.JSON([]interface{}{})
 		}
 
-		var deleted []interface{}
+		var deleted []map[string]interface{}
 		memcache.Cache.Lock()
 		if len(data.Filter) == 0 {
 			err := os.RemoveAll(fmt.Sprintf("./data/%s/%s", data.Database, data.Collection))
@@ -107,7 +125,17 @@ func handleDelete() {
 		memcache.Cache.Unlock()
 
 		if deleted == nil {
-			deleted = make([]interface{}, 0)
+			deleted = make([]map[string]interface{}, 0)
+		}
+
+		if len(deleted) > _config.Distribute.StartFrom {
+			ctx.Status(fiber.StatusPartialContent)
+
+			distributorID := distributor.Set(deleted)
+			return ctx.JSON(fiber.Map{
+				"distribute":    true,
+				"distributorID": distributorID,
+			})
 		}
 
 		return ctx.JSON(deleted)
@@ -115,6 +143,29 @@ func handleDelete() {
 }
 
 func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
+	distributorID := request.DistributorID
+	if len(distributorID) > 0 {
+		documents, size, err := distributor.GetData(distributorID)
+		if err != nil {
+			ws.WriteJSON(structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: request.RequestID,
+				Message:   err.Error(),
+			})
+
+			return
+		}
+
+		ws.WriteJSON(structure.WebsocketAnswer{
+			RequestID: request.RequestID,
+
+			Residue: size,
+			Data:    documents,
+		})
+
+		return
+	}
+
 	if request.Filter == nil {
 		request.Filter = make(map[string]interface{})
 	}
@@ -140,7 +191,7 @@ func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
 		return
 	}
 
-	var deleted []interface{}
+	var deleted []map[string]interface{}
 	memcache.Cache.Lock()
 	if len(request.Filter) == 0 {
 		err := os.RemoveAll(fmt.Sprintf("./data/%s/%s", request.Database, request.Collection))
@@ -200,7 +251,17 @@ func WSHandleDelete(ws *websocket.Conn, request structure.WebsocketRequest) {
 	memcache.Cache.Unlock()
 
 	if deleted == nil {
-		deleted = make([]interface{}, 0)
+		deleted = make([]map[string]interface{}, 0)
+	}
+
+	if len(deleted) > _config.Distribute.StartFrom {
+		distributorID = distributor.Set(deleted)
+		ws.WriteJSON(structure.WebsocketAnswer{
+			RequestID:     request.RequestID,
+			DistributorID: distributorID,
+		})
+
+		return
 	}
 
 	ws.WriteJSON(structure.WebsocketAnswer{

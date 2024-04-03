@@ -15,6 +15,9 @@ const (
 	MIN_GARBAGE  = 1
 	MIN_MAX_DATA = 1
 
+	MIN_DISTRIBUTE_FROM = 2
+	MIN_DISTRIBUTE_GIVE = 2
+
 	MIN_WORKER_TASK = 1
 	MAX_WORKER_TASK = 100000
 )
@@ -42,6 +45,15 @@ func init() {
 
 	if config.Settings.MaxData < MIN_MAX_DATA {
 		log.Panicf("Minimum count of settings.max_data is %v", MIN_MAX_DATA)
+	}
+
+	distribute := config.Distribute
+	if distribute.StartFrom < MIN_DISTRIBUTE_FROM {
+		log.Panicf("Minimum count of distribute.from is %v", MIN_DISTRIBUTE_FROM)
+	}
+
+	if distribute.GiveMax < MIN_DISTRIBUTE_GIVE {
+		log.Panicf("Minimum count of distribute.give_at_one_call is %v", MIN_DISTRIBUTE_GIVE)
 	}
 
 	debug.SetMaxThreads(threads)

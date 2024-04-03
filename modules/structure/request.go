@@ -7,6 +7,8 @@ type WebsocketRequest struct {
 	Database   string `json:"database"`
 	Collection string `json:"collection"`
 
-	Filter map[string]interface{} `json:"filter"`
-	Data   interface{}            `json:"data"`
+	Filter        map[string]interface{} `json:"filter"`
+	DistributorID string                 `json:"distributorID"`
+
+	Data interface{} `json:"data"`
 }

@@ -1,17 +1,21 @@
 server:
     port: 5000 # The port on which the server will be running.
-    websocket_support: true # Enable WebSocket protocol support. If set to true, the server will support WebSocket connections.
+    websocket_support: true # Switches WebSocket protocol support. If set to true, the server will support WebSocket connections.
 
 settings:
     max_threads: 30000 # The maximum number of request handlers that can be concurrently running. Increasing this value allows the server to handle more requests simultaneously.
     max_data: 10 # The maximum size of data in the request body, in megabytes. If a request contains data exceeding this size, the server may reject the request.
 
-    worker_tasks: 100 # How many tasks a single database will handle. The larger the value, the faster the processing will be, but more resources will be used (also it is possible with too large a value after startup excessive memory waste that will pass after a while).
-    check_updates: true # Enable server update checking from the git repository. When enabled, the server will periodically check for updates and prompt for an update if available.
+    worker_tasks: 100 # How many tasks a single database will handle. The larger the value, the faster the processing will be, but more resources will be used (if the value is too high after launch, a memory loss may occur which will go away after some time).
+    check_updates: true # Switches server update checking from the git repository. When enabled, the server will periodically check for updates and prompt for an update if available.
+
+distribute:
+    from: 30000 # If the response exceeds this value, unloading will start (returns distributeID)
+    give_at_one_call: 15000 # When requesting an unloading, the specified number of documents will be issued at one time
 
 garbage:
-    enabled: false # Enable automatic garbage collection. When enabled, the server will periodically clean up unused resources to optimize memory usage.
-    interval: 5 # The interval in minutes between automatic garbage collection invocations. The default value is set to 5 minutes.
+    enabled: false # Switches automatic garbage collection. When enabled, the server will periodically clean up unused resources to optimize memory usage.
+    interval: 5 # The interval in minutes between automatic garbage collection invocations. The default value is 5 minutes.
 
 # Authentication parameters
 auth:

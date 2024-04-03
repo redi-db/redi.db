@@ -16,6 +16,11 @@ type Config struct {
 		CheckUpdates bool `yaml:"check_updates"`
 	} `json:"settings"`
 
+	Distribute struct {
+		StartFrom int `yaml:"from"`
+		GiveMax   int `yaml:"give_at_one_call"`
+	} `yaml:"distribute"`
+
 	Garbage struct {
 		Enabled  bool `yaml:"enabled"`
 		Interval int  `yaml:"interval"`

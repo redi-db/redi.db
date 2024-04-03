@@ -1,9 +1,9 @@
 Additions:
-    + Added new parameter "settings.worker_tasks" to the config. Description is present in the new created config
+    + Evenly returns data when u have a huge amount of documents ("distribute" setting in config)
 
 Changes:
-    + Collection processing has been accelerated (at startup)
-    + All dependencies have been updated to the latest version (stable for use)
+    + Increased filter handling performance
 
 Fixes:
-    + If some methods in the "websocket" protocol received NULL it caused the server to crash  
+    + Corrected some comments in the config for better understanding
+    + instantUpdate now doesn’t overwrite the _id of found documents based on filters (the _id from the first document overwrote the _id of all other documents, because of which during subsequent manipulations with the documents, the database wasn't working properly)
