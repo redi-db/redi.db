@@ -1,5 +1,2 @@
-Changes:
-    + Now the $max filter will be processed after the other filters are processed (e.g. $gt + $order will work $max correctly)
-
 Fixes:
-    + Some filters may have been unstable
+    + Filters with the boolean data type were working incorrectly

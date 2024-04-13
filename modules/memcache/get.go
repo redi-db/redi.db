@@ -293,18 +293,22 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 
 func matchesFilter(data map[string]interface{}, filter map[string]interface{}) bool {
 	for key, value := range filter {
-		dataValue, exists := data[key]
-		if !exists || !reflect.DeepEqual(dataValue, value) {
-			return false
-		}
-		if filterMap, ok := value.(map[string]interface{}); ok {
-			if dataMap, ok := dataValue.(map[string]interface{}); ok {
-				if !matchesFilter(dataMap, filterMap) {
+		if dataValue, ok := data[key]; ok {
+			if filterMap, ok := value.(map[string]interface{}); ok {
+				if dataMap, ok := dataValue.(map[string]interface{}); ok {
+					if !matchesFilter(dataMap, filterMap) {
+						return false
+					}
+				} else {
 					return false
 				}
 			} else {
-				return false
+				if dataValue != value {
+					return false
+				}
 			}
+		} else {
+			return false
 		}
 	}
 	return true
