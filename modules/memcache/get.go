@@ -70,6 +70,7 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	var _sort map[string]interface{}
 
 	var ne []interface{}
+	var arr map[string]interface{}
 
 	var only []interface{}
 	var omit []interface{}
@@ -80,6 +81,11 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	if filter != nil {
 		if filter["$max"] != nil {
 			delete(filter, "$max")
+		}
+
+		if filter["$arr"] != nil {
+			arr = filter["$arr"].(map[string]interface{})
+			delete(filter, "$arr")
 		}
 
 		if filter["$regex"] != nil {
@@ -129,6 +135,52 @@ func GetDocuments(database string, collection string, filter map[string]interfac
 	for _, document := range cache[database][collection] {
 		if matchesFilter(document, filter) {
 			result = append(result, document)
+		}
+	}
+
+	if len(arr) > 0 {
+		by := arr["by"].(string)
+		value := arr["value"]
+
+		valueReflect := reflect.TypeOf(value).String()
+		for index, document := range result {
+			fieldValue, contains := getValue(document, by)
+			if !contains {
+				result = RemoveIndex(result, index)
+				continue
+			}
+
+			fieldValueType := reflect.TypeOf(fieldValue).String()
+			if fieldValueType != "[]interface {}" {
+				result = RemoveIndex(result, index)
+				continue
+			}
+
+			items := fieldValue.([]interface{})
+			allConditionsMatch := false
+			if valueReflect == "bool" || valueReflect == "string" || valueReflect == "float64" {
+				for _, item := range items {
+					if item == value {
+						allConditionsMatch = true
+						break
+					}
+				}
+			} else {
+				for _, item := range items {
+					if item == nil || reflect.TypeOf(item).String() != "map[string]interface {}" {
+						continue
+					}
+
+					if matchesFilter(item.(map[string]interface{}), value.(map[string]interface{})) {
+						allConditionsMatch = true
+						break
+					}
+				}
+			}
+
+			if !allConditionsMatch {
+				result = RemoveIndex(result, index)
+			}
 		}
 	}
 
@@ -413,7 +465,8 @@ func removeDocumentValue(document map[string]interface{}, key string) map[string
 
 func RemoveIndex(s []map[string]interface{}, index int) []map[string]interface{} {
 	if index < 0 || index >= len(s) {
-		return s
+		return []map[string]interface{}{}
 	}
+
 	return append(s[:index], s[index+1:]...)
 }

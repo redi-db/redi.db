@@ -1,2 +1,5 @@
+Added:
+    + Filter "$arr" - search of data in array
+
 Fixes:
-    + Filters with the boolean data type were working incorrectly
+    + Filter "$only" & "$omit" when connecting to WebSocket, could send the server into offline mode if the arguments were inputted incorrectly

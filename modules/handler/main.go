@@ -17,7 +17,7 @@ import (
 
 var LengthOfID = 18
 var IgnoreFilters = []string{"$only", "$order", "$max", "$omit"}
-var LockedFilters = []string{"_id", "$or", "$order", "$gt", "$lt", "$max", "$omit", "$only", "$regex", "$and"}
+var LockedFilters = []string{"_id", "$or", "$order", "$gt", "$arr", "$lt", "$max", "$omit", "$only", "$regex", "$and"}
 
 var App = fiber.New(fiber.Config{
 	DisableStartupMessage: true,
@@ -144,6 +144,31 @@ func handleHttpFilter(filter map[string]interface{}) (map[string]interface{}, fi
 				return nil, fiber.Map{
 					"success": false,
 					"message": fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$only with index %d", i), "string"),
+				}
+			}
+		}
+	}
+
+	if filter["$arr"] != nil {
+		if reflect.TypeOf(filter["$arr"]).String() != "map[string]interface {}" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.MUST_BY, "$arr", "object with \"by\" and \"type\""),
+			}
+		}
+
+		arr := filter["$arr"].(map[string]interface{})
+		if arr["by"] == nil || reflect.TypeOf(arr["by"]).String() != "string" {
+			return nil, fiber.Map{
+				"success": false,
+				"message": fmt.Sprintf(structure.MUST_BY, "$arr", "object with \"by\" (string)"),
+			}
+		} else {
+			value := arr["value"]
+			if value == nil || reflect.TypeOf(value).String() != "map[string]interface {}" && reflect.TypeOf(value).String() != "string" && reflect.TypeOf(value).String() != "float64" && reflect.TypeOf(value).String() != "bool" {
+				return nil, fiber.Map{
+					"success": false,
+					"message": fmt.Sprintf(structure.MUST_BY, "$arr", "object with \"value\" (boolean, number, string or object)"),
 				}
 			}
 		}
@@ -408,6 +433,74 @@ func handleWSFilter(filter map[string]interface{}, requestID int) (map[string]in
 			Error:     true,
 			RequestID: requestID,
 			Message:   fmt.Sprintf(structure.MUST_BY, "$max", "integer"),
+		}
+	}
+
+	if filter["$only"] != nil {
+		if reflect.TypeOf(filter["$only"]).String() != "[]interface {}" {
+			return nil, structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$only", "array with strings"),
+			}
+		}
+
+		for i, onlyValue := range filter["$only"].([]interface{}) {
+			if onlyValue == nil || reflect.TypeOf(onlyValue).String() != "string" {
+				return nil, structure.WebsocketAnswer{
+					Error:     true,
+					RequestID: requestID,
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$only with index %d", i), "string"),
+				}
+			}
+		}
+	}
+
+	if filter["$arr"] != nil {
+		if reflect.TypeOf(filter["$arr"]).String() != "map[string]interface {}" {
+			return nil, structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$arr", "object with \"by\" and \"type\""),
+			}
+		}
+
+		arr := filter["$arr"].(map[string]interface{})
+		if arr["by"] == nil || reflect.TypeOf(arr["by"]).String() != "string" {
+			return nil, structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$arr", "object with \"by\" (string)"),
+			}
+		} else {
+			value := arr["value"]
+			if value == nil || reflect.TypeOf(value).String() != "map[string]interface {}" && reflect.TypeOf(value).String() != "string" && reflect.TypeOf(value).String() != "float64" && reflect.TypeOf(value).String() != "bool" {
+				return nil, structure.WebsocketAnswer{
+					Error:     true,
+					RequestID: requestID,
+					Message:   fmt.Sprintf(structure.MUST_BY, "$arr", "object with \"value\" (boolean, number, string or object)"),
+				}
+			}
+		}
+	}
+
+	if filter["$omit"] != nil {
+		if reflect.TypeOf(filter["$omit"]).String() != "[]interface {}" {
+			return nil, structure.WebsocketAnswer{
+				Error:     true,
+				RequestID: requestID,
+				Message:   fmt.Sprintf(structure.MUST_BY, "$omit", "array with strings"),
+			}
+		}
+
+		for i, omitValue := range filter["$omit"].([]interface{}) {
+			if omitValue == nil || reflect.TypeOf(omitValue).String() != "string" {
+				return nil, structure.WebsocketAnswer{
+					Error:     true,
+					RequestID: requestID,
+					Message:   fmt.Sprintf(structure.MUST_BY, fmt.Sprintf("$omit with index %d", i), "string"),
+				}
+			}
 		}
 	}
 
